@@ -199,19 +199,21 @@
     </div>
 
     <label>Loan Type</label>
-    <select id="loanType" onchange="toggleManualMI(); calc()">
-      <option value="FHA">FHA</option>
-      <option value="USDA">USDA</option>
-      <option value="VA">VA</option>
-      <option value="Conventional">Conventional</option>
-    </select>
+<label>Loan Type</label>
+<select id="loanType" onchange="toggleManualMI(); calc()">
+  <option value="FHA">FHA</option>
+  <option value="USDA">USDA</option>
+  <option value="VA">VA</option>
+  <option value="Conventional">Conventional</option>
+</select>
 
-    <div id="manualMiBlock" style="display:none;">
-      <label>Manual MI % (Annual)</label>
-      <input id="manualMi" type="text" inputmode="decimal"
-             placeholder="0.62"
-             oninput="calc()" />
-    </div>
+<div id="manualMiBlock" style="display:none;">
+  <label>Manual MI % (Annual)</label>
+  <input id="manualMi" type="text" inputmode="decimal"
+         placeholder="0.62"
+         oninput="calc()" />
+</div>
+
 
     <h2>Annual Property Costs</h2>
 
@@ -396,8 +398,16 @@ function parseIntNum(str) {
 --------------------------------------------------------- */
 function toggleManualMI() {
   const type = document.getElementById("loanType").value;
-  document.getElementById("manualMiBlock").style.display =
-    type === "Conventional" ? "block" : "none";
+  const downPct = parseFloat(document.getElementById("downPct").value) || 0;
+
+  const miBlock = document.getElementById("manualMiBlock");
+
+  // Show ONLY if Conventional AND down payment < 20%
+  if (type === "Conventional" && downPct < 20) {
+    miBlock.style.display = "block";
+  } else {
+    miBlock.style.display = "none";
+  }
 }
 
 function getMIFactor(type) {
@@ -430,6 +440,7 @@ function fmt(n) {
 function pct(n) {
   return (n * 100).toFixed(2) + "%";
 }
+
 
 /* ---------------------------------------------------------
    REFINANCE LTV SYNCING
