@@ -153,12 +153,12 @@
 
   <label>Purchase Price ($)</label>
 <input id="price" type="text" inputmode="decimal"
-       value="350,000"
+       value=""
        oninput="formatNumber(this); calc(); toggleManualMI()" />
 
 <label>Down Payment %</label>
 <input id="downPct" type="text" inputmode="decimal"
-       value="3.5"
+       value=""
        oninput="calc(); toggleManualMI()" />
 </div>
 
@@ -168,17 +168,17 @@
 
       <label>Home Value ($)</label>
       <input id="homeValue" type="text" inputmode="decimal"
-             value="400,000"
+             value=""
              oninput="onHomeValueChange(); calc()" />
 
       <label>Loan Amount ($)</label>
       <input id="refiLoanAmt" type="text" inputmode="numeric"
-             value="320,000"
+             value=""
              oninput="onRefiLoanChange(); calc()" />
 
       <label>LTV %</label>
       <input id="refiLtv" type="text" inputmode="decimal"
-             value="80"
+             value=""
              oninput="onRefiLtvChange(); calc()" />
     </div>
 
@@ -188,7 +188,7 @@
       <div>
         <label>Interest Rate %</label>
         <input id="rate" type="text" inputmode="decimal"
-               value="6.25"
+               value=""
                oninput="calc()" />
       </div>
       <div>
@@ -199,19 +199,18 @@
       </div>
     </div>
 
-    <label>Loan Type</label>
 <label>Loan Type</label>
 <select id="loanType" onchange="toggleManualMI(); calc()">
-  <option value="FHA">FHA</option>
+  <option value="Conventional">Conventional</option>
   <option value="USDA">USDA</option>
   <option value="VA">VA</option>
-  <option value="Conventional">Conventional</option>
+  <option value="FHA">FHA</option>
 </select>
 
 <div id="manualMiBlock" style="display:none;">
   <label>Manual MI % (Annual)</label>
   <input id="manualMi" type="text" inputmode="decimal"
-         placeholder="0.62"
+         placeholder="0.41"
          oninput="calc()" />
 </div>
 
