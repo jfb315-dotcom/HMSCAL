@@ -151,19 +151,20 @@
     <div id="purchaseInputs">
       <h2>Purchase Inputs</h2>
 
-      <label>Purchase Price ($)</label>
-      <input id="price" type="text" inputmode="decimal"
-             value="350,000"
-             oninput="formatNumber(this); calc()" />
+  <label>Purchase Price ($)</label>
+<input id="price" type="text" inputmode="decimal"
+       value="350,000"
+       oninput="formatNumber(this); calc(); toggleManualMI()" />
 
-      <label>Down Payment %</label>
-      <input id="downPct" type="text" inputmode="decimal"
-             value="3.5"
-             oninput="calc()" />
-    </div>
+<label>Down Payment %</label>
+<input id="downPct" type="text" inputmode="decimal"
+       value="3.5"
+       oninput="calc(); toggleManualMI()" />
+</div>
 
-    <div id="refiInputs" style="display:none;">
-      <h2>Refinance Inputs</h2>
+<div id="refiInputs" style="display:none;">
+  <h2>Refinance Inputs</h2>
+
 
       <label>Home Value ($)</label>
       <input id="homeValue" type="text" inputmode="decimal"
