@@ -374,10 +374,12 @@
     <div id="targetInputs" style="display:none;">
       <h2>What Can I Afford? (Target Budget Mode)</h2>
       <label>Target Maximum Monthly Payment ($)</label>
-      <input id="targetPiti" type="text" inputmode="decimal" value="2,500" oninput="formatNumber(this); syncAndCalc()" />
+      <input id="targetPiti" type="text" inputmode="decimal" value="2,500" oninput="syncTextToSlider('targetPiti', 'targetPitiSlider'); syncAndCalc()" />
+      <input id="targetPitiSlider" type="range" min="500" max="10000" step="50" value="2500" oninput="syncSliderToText('targetPitiSlider', 'targetPiti'); syncAndCalc()" />
       
       <label>Down Payment Cash Target ($)</label>
-      <input id="targetDownCash" type="text" inputmode="decimal" value="25,000" oninput="formatNumber(this); syncAndCalc()" />
+      <input id="targetDownCash" type="text" inputmode="decimal" value="25,000" oninput="syncTextToSlider('targetDownCash', 'targetDownCashSlider'); syncAndCalc()" />
+      <input id="targetDownCashSlider" type="range" min="0" max="300000" step="1000" value="25000" oninput="syncSliderToText('targetDownCashSlider', 'targetDownCash'); syncAndCalc()" />
     </div>
 
     <h2>Loan Details</h2>
@@ -647,6 +649,8 @@ function switchActiveSlot(slot) {
   document.getElementById("rateSlider").value = parseFloat(data.rate) || 6.5;
   document.getElementById("taxesSlider").value = parseNum(data.taxes);
   document.getElementById("insSlider").value = parseNum(data.ins);
+  document.getElementById("targetPitiSlider").value = parseNum(data.targetPiti);
+  document.getElementById("targetDownCashSlider").value = parseNum(data.targetDownCash);
 
   updateProgramInputs();
   calc();
@@ -759,7 +763,7 @@ function syncSliderToText(sliderId, textId) {
   const val = document.getElementById(sliderId).value;
   const textInput = document.getElementById(textId);
   textInput.value = val;
-  if (["price","homeValue","refiLoanAmt","taxes","ins"].includes(textId)) formatNumber(textInput);
+  if (["price","homeValue","refiLoanAmt","taxes","ins","targetPiti","targetDownCash"].includes(textId)) formatNumber(textInput);
   isSyncing = false;
 }
 function syncTextToSlider(textId, sliderId) {
