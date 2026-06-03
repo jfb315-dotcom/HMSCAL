@@ -23,6 +23,22 @@
       100% { box-shadow: 0 0 14px rgba(0,90,156,0.75), 0 0 28px rgba(0,90,156,0.45); }
     }
 
+    /* Eye-catching pulse/glow animation for the high-intent callout button */
+    @keyframes featureGlow {
+      0% {
+        box-shadow: 0 0 4px rgba(226, 190, 74, 0.4), inset 0 0 4px rgba(226, 190, 74, 0.2);
+        border-color: #c9a33b;
+      }
+      50% {
+        box-shadow: 0 0 16px rgba(226, 190, 74, 0.85), inset 0 0 8px rgba(226, 190, 74, 0.4);
+        border-color: #fff;
+      }
+      100% {
+        box-shadow: 0 0 4px rgba(226, 190, 74, 0.4), inset 0 0 4px rgba(226, 190, 74, 0.2);
+        border-color: #c9a33b;
+      }
+    }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -65,6 +81,19 @@
     .toggle-btn.active {
       background: var(--accent);
       color: #fff;
+      border-color: #fff;
+    }
+
+    /* Target specific standalone style for the active glowing feature mode */
+    .toggle-btn.glow-accent {
+      animation: featureGlow 2.5s infinite ease-in-out;
+      color: #fff;
+      font-weight: 700;
+    }
+    .toggle-btn.glow-accent.active {
+      background: #b58f16;
+      animation: none;
+      box-shadow: 0 0 14px rgba(226, 190, 74, 0.6);
       border-color: #fff;
     }
 
@@ -307,23 +336,20 @@
     <h1>Mortgage Calculator</h1>
     <div class="subtitle">Home Mortgage Solutions, LLC</div>
 
-    <!-- MAIN APP MODES -->
     <div class="toggle-row">
       <div id="btnPurchase" class="toggle-btn active" onclick="setMode('purchase'); calc()">Purchase</div>
       <div id="btnRefi" class="toggle-btn" onclick="setMode('refi'); calc()">Refinance</div>
-      <div id="btnTarget" class="toggle-btn" onclick="setMode('target'); calc()">What Can I Afford?</div>
+      <div id="btnTarget" class="toggle-btn glow-accent" onclick="setMode('target'); calc()">What Can I Afford?</div>
     </div>
 
-    <!-- SCENARIO SWITCHBOARD WORKSPACE (AUTO-SAVING) -->
     <div class="scenario-bank">
-      <label style="margin-bottom:2px; text-align:center;">Select Scenario to Edit</label>
+      <label style="margin-bottom:2px; text-align:center;">Compare multiple products</label>
       <div class="scenario-row">
         <div id="scenA" class="scenario-btn active" onclick="switchActiveSlot('A')">Scenario A</div>
         <div id="scenB" class="scenario-btn" onclick="switchActiveSlot('B')">Scenario B</div>
       </div>
     </div>
 
-    <!-- GLOBAL APPLICABLE FIRST INPUT ITEM -->
     <div id="creditScoreBlock">
       <label>Estimated Credit Score</label>
       <select id="creditScore" onchange="syncAndCalc()">
@@ -335,7 +361,6 @@
       </select>
     </div>
 
-    <!-- INPUT BLOCKS -->
     <div id="purchaseInputs">
       <h2>Purchase Inputs</h2>
       <label>Purchase Price ($)</label>
@@ -370,7 +395,6 @@
       <input id="refiLtvSlider" type="range" min="10" max="100" step="0.5" value="90" oninput="syncSliderToText('refiLtvSlider', 'refiLtv'); onRefiLtvChange(); syncAndCalc()" />
     </div>
 
-    <!-- WHAT CAN I AFFORD INPUT MODES -->
     <div id="targetInputs" style="display:none;">
       <h2>What Can I Afford? (Target Budget Mode)</h2>
       <label>Target Maximum Monthly Payment ($)</label>
@@ -408,7 +432,6 @@
       <option value="USDA">USDA</option>
     </select>
 
-    <!-- PROGRAM HOOKS -->
     <div id="vaStatusBlock" style="display:none;">
       <label>VA Funding Fee Status</label>
       <select id="vaStatus" onchange="syncAndCalc()">
@@ -437,14 +460,12 @@
       </div>
     </div>
 
-    <button onclick="scrollToResults()">Calculate Payment Breakdown</button>
+    <button onclick="scrollToResults()">Review calculations below</button>
 
-    <!-- PAYMENT BREAKDOWN CARD -->
     <div class="card" id="results">
       <img src="email-logo.png" style="width:100%; max-width:200px; display:block; margin:0 auto 12px; border-radius: 4px;" alt="Home Mortgage Solutions Logo" />
       <h3 id="cardHeaderTitle" style="text-align:center; margin-bottom:12px; font-size:1.1rem; color:#fff;">Payment Breakdown Estimate</h3>
 
-      <!-- STANDARD CALCULATION GRAPH VIEWS -->
       <div id="standardOutputViews">
         <div class="chart-container">
           <div id="donutRing" class="donut-ring">
@@ -485,7 +506,6 @@
         </div>
       </div>
 
-      <!-- DYNAMIC SIDE BY SIDE MATRIX MODULE -->
       <div id="sideBySideMatrixView" style="display:none; margin-top:10px;">
         <table class="comp-table">
           <thead>
@@ -515,7 +535,6 @@
       </div>
     </div>
 
-    <!-- BOTTOM MOBILE SYSTEM LAYOUT ACTION BLOCKS -->
     <div class="action-grid">
       <button id="saveShotBtn" style="background: #002240; border-color: var(--border);" onclick="saveScreenshot()">
         Share Image
@@ -539,7 +558,6 @@
     </div>
   </div>
 
-  <!-- SCREENSHOT UTILITY INTERFACES -->
   <div id="previewOverlay" style="position: fixed; inset: 0; background: rgba(0,34,64,0.85); display: none; justify-content: center; align-items: center; z-index: 99999; padding: 20px;">
     <div style="background: #00335c; padding: 20px; border-radius: 12px; width: 94%; max-width: 420px; text-align: center; border: 1px solid var(--border);">
       <div id="pressMessage" style="background: var(--accent); color: #fff; padding: 10px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 700; margin-bottom: 16px; animation: pulseGlow 1.8s ease-in-out infinite;">
@@ -549,7 +567,6 @@
     </div>
   </div>
 
-  <!-- CONTACT POP-UP INPUT MODAL -->
   <div id="contactModal" class="modal-overlay">
     <div class="modal-box">
       <h3 id="modalTitle">Contact Officer</h3>
