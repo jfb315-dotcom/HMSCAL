@@ -14,7 +14,30 @@
       --text: #ffffff;     
       --muted: #8cb1d0;    
     }
+/* Tighten the card layout for better proportion */
+#results {
+    max-width: 320px !important; 
+    padding: 15px !important;    
+    margin: 20px auto !important;
+}
 
+/* Shrink the logo specifically */
+#results img {
+    max-width: 120px !important; 
+    margin-bottom: 10px !important;
+}
+
+/* Tighten the lines for a more compact look */
+#results .line {
+    font-size: 0.85rem !important; 
+    margin: 4px 0 !important;      
+}
+
+/* Adjust headings/totals */
+#results .big {
+    font-size: 1rem !important;
+    margin-top: 8px !important;
+}
     * { box-sizing: border-box; }
 
     @keyframes pulseGlow {
