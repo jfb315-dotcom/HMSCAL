@@ -1197,27 +1197,28 @@ Thank you!`;
 
 async function saveScreenshot() {
   const original = document.getElementById("results");
-  
-  // We use the onclone option to handle the compact styling AND the missing chart background
+
   const canvas = await html2canvas(original, { 
     scale: 2, 
     backgroundColor: "#00335c",
+    logging: true, // You can check your browser console (F12) if it fails
     onclone: (clonedDoc) => {
-      const clone = clonedDoc.getElementById("results");
-      
-      // Apply compact styles
-      clone.style.maxWidth = "320px";
-      clone.style.padding = "10px";
-      
-      // Shrink logo
-      const logo = clone.querySelector("img");
-      if (logo) logo.style.maxWidth = "80px";
-      
-      // FIX: Copy the chart background from the live element to the clone
+      // Find the elements in the NEW cloned version
       const originalRing = document.getElementById("donutRing");
       const cloneRing = clonedDoc.getElementById("donutRing");
+      
       if (originalRing && cloneRing) {
-        cloneRing.style.background = originalRing.style.background;
+        // GET THE COMPUTED STYLE: This is the fix. 
+        // It grabs the actual color/gradient that is currently on your screen.
+        const computedBackground = window.getComputedStyle(originalRing).background;
+        cloneRing.style.background = computedBackground;
+      }
+      
+      // Keep your compact styles here as well
+      const cloneResults = clonedDoc.getElementById("results");
+      if (cloneResults) {
+        cloneResults.style.maxWidth = "320px";
+        cloneResults.style.padding = "10px";
       }
     }
   });
