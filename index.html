@@ -1008,28 +1008,32 @@ function calc() {
     document.getElementById("donutTotalText").textContent = fmt(activeCalc.totalPiti);
   }
 
-async function saveScreenshot() {
-  const results = document.getElementById("results");
-  
-  // Force the layout to be compact just for the image
-  results.style.maxWidth = "320px";
-  results.style.padding = "10px";
-  
-  const canvas = await html2canvas(results, { 
-    scale: 2, 
-    backgroundColor: "#00335c" 
-  });
-  
-  // Reset the layout to normal
-  results.style.maxWidth = "";
-  results.style.padding = "";
+if (activeCalc.totalPiti > 0) {
 
-  const overlay = document.getElementById("previewOverlay");
-  const fullImg = document.getElementById("previewImage");
-  fullImg.src = canvas.toDataURL("image/png");
-  overlay.style.display = "flex";
-  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
-}
+    const piSeg = (activeCalc.pi / activeCalc.totalPiti) * 100;
+
+    const miSeg = piSeg + ((activeCalc.miMo / activeCalc.totalPiti) * 100);
+
+    const taxSeg = miSeg + ((activeCalc.taxMo / activeCalc.totalPiti) * 100);
+
+    
+
+    document.getElementById("donutRing").style.background = `conic-gradient(
+
+      var(--accent) 0%, var(--accent) ${piSeg}%, 
+
+      #4ae290 ${piSeg}%, #4ae290 ${miSeg}%, 
+
+      #e2be4a ${miSeg}%, #e2be4a ${taxSeg}%, 
+
+      #e24a4a ${taxSeg}%, #e24a4a 100%
+
+    )`;
+
+  }
+
+} 
+
 
 function updateMatrixComparisonUI() {
   const a = calculatedOutputs.A;
