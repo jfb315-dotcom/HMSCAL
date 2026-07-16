@@ -1173,13 +1173,43 @@ Thank you!`;
 }
 
 async function saveScreenshot() {
-  const results = document.getElementById("results");
-  const canvas = await html2canvas(results, { scale: 2, backgroundColor: "#00335c" });
+  const original = document.getElementById("results");
+  
+  // Clone the results to modify specifically for the image
+  const clone = original.cloneNode(true);
+  
+  // Apply compact styles
+  clone.style.position = "absolute";
+  clone.style.left = "-9999px"; 
+  clone.style.maxWidth = "320px";
+  clone.style.padding = "10px";
+  
+  // Shrink the logo in the clone specifically
+  const logo = clone.querySelector("img");
+  if (logo) logo.style.maxWidth = "80px"; 
+  
+  document.body.appendChild(clone);
+
+  // Capture the clone
+  const canvas = await html2canvas(clone, { 
+    scale: 2, 
+    backgroundColor: "#00335c" 
+  });
+  
+  // Cleanup
+  document.body.removeChild(clone);
+
+  // Display the preview
   const overlay = document.getElementById("previewOverlay");
   const fullImg = document.getElementById("previewImage");
   fullImg.src = canvas.toDataURL("image/png");
   overlay.style.display = "flex";
-  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  
+  overlay.onclick = (e) => { 
+    if (e.target === overlay) {
+      overlay.style.display = "none"; 
+    }
+  };
 }
 
 window.onload = () => { calc(); };
