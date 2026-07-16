@@ -1198,29 +1198,29 @@ Thank you!`;
 async function saveScreenshot() {
   const original = document.getElementById("results");
   
-  // Clone the results to modify specifically for the image
-  const clone = original.cloneNode(true);
-  
-  // Apply compact styles
-  clone.style.position = "absolute";
-  clone.style.left = "-9999px"; 
-  clone.style.maxWidth = "320px";
-  clone.style.padding = "10px";
-  
-  // Shrink the logo in the clone specifically
-  const logo = clone.querySelector("img");
-  if (logo) logo.style.maxWidth = "80px"; 
-  
-  document.body.appendChild(clone);
-
-  // Capture the clone
-  const canvas = await html2canvas(clone, { 
+  // We use the onclone option to handle the compact styling AND the missing chart background
+  const canvas = await html2canvas(original, { 
     scale: 2, 
-    backgroundColor: "#00335c" 
+    backgroundColor: "#00335c",
+    onclone: (clonedDoc) => {
+      const clone = clonedDoc.getElementById("results");
+      
+      // Apply compact styles
+      clone.style.maxWidth = "320px";
+      clone.style.padding = "10px";
+      
+      // Shrink logo
+      const logo = clone.querySelector("img");
+      if (logo) logo.style.maxWidth = "80px";
+      
+      // FIX: Copy the chart background from the live element to the clone
+      const originalRing = document.getElementById("donutRing");
+      const cloneRing = clonedDoc.getElementById("donutRing");
+      if (originalRing && cloneRing) {
+        cloneRing.style.background = originalRing.style.background;
+      }
+    }
   });
-  
-  // Cleanup
-  document.body.removeChild(clone);
 
   // Display the preview
   const overlay = document.getElementById("previewOverlay");
