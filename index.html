@@ -212,17 +212,27 @@
     }
 
     .donut-ring {
+      position: relative;
       width: 140px;
       height: 140px;
       border-radius: 50%;
-      background: conic-gradient(var(--accent) 0%, var(--accent) 100%);
       display: flex;
       justify-content: center;
       align-items: center;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
+    /* The ring is drawn on a canvas because the Share Image tool (html2canvas)
+       cannot draw CSS conic-gradients, so they came out blank in the image. */
+    #donutCanvas {
+      position: absolute;
+      inset: 0;
+      width: 140px;
+      height: 140px;
+    }
+
     .donut-hole {
+      position: relative;
       width: 92px;
       height: 92px;
       background: var(--card);
@@ -362,9 +372,9 @@
     <div class="subtitle">Home Mortgage Solutions, LLC</div>
 
     <div class="toggle-row">
-      <div id="btnPurchase" class="toggle-btn active" onclick="setMode('purchase'); calc()">Purchase</div>
-      <div id="btnRefi" class="toggle-btn" onclick="setMode('refi'); calc()">Refinance</div>
-      <div id="btnTarget" class="toggle-btn glow-accent" onclick="setMode('target'); calc()">What Can I Afford?</div>
+      <div id="btnPurchase" class="toggle-btn active" onclick="setMode('purchase'); syncAndCalc()">Purchase</div>
+      <div id="btnRefi" class="toggle-btn" onclick="setMode('refi'); syncAndCalc()">Refinance</div>
+      <div id="btnTarget" class="toggle-btn glow-accent" onclick="setMode('target'); syncAndCalc()">What Can I Afford?</div>
     </div>
 
     <div class="scenario-bank">
@@ -494,6 +504,7 @@
       <div id="standardOutputViews">
         <div class="chart-container">
           <div id="donutRing" class="donut-ring">
+            <canvas id="donutCanvas" width="420" height="420" aria-hidden="true"></canvas>
             <div class="donut-hole">
               <span id="donutCenterLabel">Total PITI</span>
               <span id="donutTotalText" class="donut-total">$0.00</span>
@@ -893,21 +904,21 @@ function runEngineCoreCalculations(data) {
     downPct = 100 - ltvVal;
   } 
   else if (data.mode === "target") {
+    // Find the largest loan whose full monthly payment (P&I, MI, taxes and
+    // insurance, including any financed upfront fee) stays within the target.
     const targetPiti = parseNum(data.targetPiti);
     const targetDown = parseNum(data.targetDownCash);
-    let targetPiPool = targetPiti - taxMo - insMo;
-    if (targetPiPool < 50) targetPiPool = 50; 
-
-    let computedMaxLoan = 0;
-    if (rateMo > 0) {
-      const pow = Math.pow(1 + rateMo, totalPayments);
-      computedMaxLoan = (targetPiPool * (pow - 1)) / (rateMo * pow);
-    } else {
-      computedMaxLoan = targetPiPool * totalPayments;
+    const asPurchase = loan => {
+      const price = loan + targetDown;
+      return runEngineCoreCalculations({ ...data, mode: "purchase", price: String(price),
+        downCash: String(targetDown), downPct: String(price > 0 ? (targetDown / price) * 100 : 0) });
+    };
+    let lo = 0, hi = 20000000;
+    for (let i = 0; i < 60; i++) {
+      const midLoan = (lo + hi) / 2;
+      if (asPurchase(midLoan).totalPiti <= targetPiti) lo = midLoan; else hi = midLoan;
     }
-    baseLoan = Math.round(computedMaxLoan);
-    homeValue = baseLoan + targetDown;
-    downPct = homeValue > 0 ? (targetDown / homeValue) * 100 : 0;
+    return { ...asPurchase(Math.floor(lo)), mode: "target", targetPiti: data.targetPiti };
   }
 
   let feeFactor = 0;
@@ -915,9 +926,9 @@ function runEngineCoreCalculations(data) {
   if (loanType === "USDA") feeFactor = 0.0100;
   if (loanType === "VA" && data.vaStatus !== "exempt") {
     if (data.vaStatus === "first") {
-      feeFactor = downPct >= 10 ? 0.0125 : (downPct >= 5 ? 0.0140 : 0.0215);
+      feeFactor = downPct >= 10 ? 0.0125 : (downPct >= 5 ? 0.0150 : 0.0215);
     } else {
-      feeFactor = downPct >= 10 ? 0.0125 : (downPct >= 5 ? 0.0140 : 0.0330);
+      feeFactor = downPct >= 10 ? 0.0125 : (downPct >= 5 ? 0.0150 : 0.0330);
     }
   }
 
@@ -1031,31 +1042,35 @@ function calc() {
     document.getElementById("donutTotalText").textContent = fmt(activeCalc.totalPiti);
   }
 
-if (activeCalc.totalPiti > 0) {
+  drawDonut([
+    [activeCalc.pi, "#005a9c"],
+    [activeCalc.miMo, "#4ae290"],
+    [activeCalc.taxMo, "#e2be4a"],
+    [activeCalc.insMo, "#e24a4a"]
+  ]);
+}
 
-    const piSeg = (activeCalc.pi / activeCalc.totalPiti) * 100;
-
-    const miSeg = piSeg + ((activeCalc.miMo / activeCalc.totalPiti) * 100);
-
-    const taxSeg = miSeg + ((activeCalc.taxMo / activeCalc.totalPiti) * 100);
-
-    
-
-    document.getElementById("donutRing").style.background = `conic-gradient(
-
-      var(--accent) 0%, var(--accent) ${piSeg}%, 
-
-      #4ae290 ${piSeg}%, #4ae290 ${miSeg}%, 
-
-      #e2be4a ${miSeg}%, #e2be4a ${taxSeg}%, 
-
-      #e24a4a ${taxSeg}%, #e24a4a 100%
-
-    )`;
-
-  }
-
-} 
+// Draws the payment ring: each slice's share of the total, clockwise from the top.
+function drawDonut(parts) {
+  const canvas = document.getElementById("donutCanvas");
+  const ctx = canvas.getContext("2d");
+  const size = canvas.width, mid = size / 2;
+  const outer = size / 2, inner = size * 46 / 140; // matches the 140px ring and 92px center
+  const total = parts.reduce((sum, p) => sum + Math.max(0, p[0]), 0);
+  ctx.clearRect(0, 0, size, size);
+  let start = -Math.PI / 2;
+  (total > 0 ? parts : [[1, "#005a9c"]]).forEach(([value, color]) => {
+    if (value <= 0) return;
+    const end = start + (value / (total || 1)) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(mid, mid, outer, start, end);
+    ctx.arc(mid, mid, inner, end, start, true);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    start = end;
+  });
+}
 
 
 function updateMatrixComparisonUI() {
@@ -1139,8 +1154,9 @@ Scenario B:
 • Interest Rate: ${rate}%
 • Base Loan Amount: ${document.getElementById("loanBaseOut").textContent}
 • P&I Payment: ${document.getElementById("piOut").textContent}
-• Monthly Insurance/MI: ${document.getElementById("miOut").textContent}
+• Monthly MI: ${document.getElementById("miOut").textContent}
 • Monthly Taxes: ${document.getElementById("taxMoOut").textContent}
+• Monthly Insurance: ${document.getElementById("insMoOut").textContent}
 • ${totalLabel}: ${totalAmt}`;
   }
   return summaryText;
@@ -1201,20 +1217,9 @@ async function saveScreenshot() {
   const canvas = await html2canvas(original, { 
     scale: 2, 
     backgroundColor: "#00335c",
-    logging: true, // You can check your browser console (F12) if it fails
+    logging: false,
     onclone: (clonedDoc) => {
-      // Find the elements in the NEW cloned version
-      const originalRing = document.getElementById("donutRing");
-      const cloneRing = clonedDoc.getElementById("donutRing");
-      
-      if (originalRing && cloneRing) {
-        // GET THE COMPUTED STYLE: This is the fix. 
-        // It grabs the actual color/gradient that is currently on your screen.
-        const computedBackground = window.getComputedStyle(originalRing).background;
-        cloneRing.style.background = computedBackground;
-      }
-      
-      // Keep your compact styles here as well
+      // Keep the compact card styles in the image
       const cloneResults = clonedDoc.getElementById("results");
       if (cloneResults) {
         cloneResults.style.maxWidth = "320px";
