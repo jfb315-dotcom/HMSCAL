@@ -481,7 +481,7 @@
       <input id="manualMi" type="text" inputmode="decimal" placeholder="Auto-calculated" oninput="syncAndCalc()" />
     </div>
 
-    <h2>Annual Property Costs</h2>
+    <h2>Property Costs</h2>
     <div class="row">
       <div>
         <label>Property Taxes ($/Year)</label>
@@ -493,6 +493,11 @@
         <input id="ins" type="text" inputmode="decimal" value="1,500" oninput="syncTextToSlider('ins', 'insSlider'); syncAndCalc()" />
         <input id="insSlider" type="range" min="0" max="6000" step="100" value="1500" oninput="syncSliderToText('insSlider', 'ins'); syncAndCalc()" />
       </div>
+    </div>
+    <div>
+      <label>HOA Dues ($/Month)</label>
+      <input id="hoa" type="text" inputmode="decimal" value="0" oninput="syncTextToSlider('hoa', 'hoaSlider'); syncAndCalc()" />
+      <input id="hoaSlider" type="range" min="0" max="1500" step="5" value="0" oninput="syncSliderToText('hoaSlider', 'hoa'); syncAndCalc()" />
     </div>
 
     <button onclick="scrollToResults()">Review calculations below</button>
@@ -517,6 +522,7 @@
           <div class="legend-item"><span class="dot" style="background:#4ae290;"></span>Monthly MI</div>
           <div class="legend-item"><span class="dot" style="background:#e2be4a;"></span>Taxes</div>
           <div class="legend-item"><span class="dot" style="background:#e24a4a;"></span>Insurance</div>
+          <div class="legend-item"><span class="dot" style="background:#b07ae2;"></span>HOA</div>
         </div>
 
         <div class="line"><span>Credit Score Target</span><span id="creditScoreOut">-</span></div>
@@ -533,6 +539,7 @@
         <div class="line"><span>Monthly MI</span><span id="miOut">$0.00</span></div>
         <div class="line"><span>Monthly Taxes</span><span id="taxMoOut">$0.00</span></div>
         <div class="line"><span>Monthly Insurance</span><span id="insMoOut">$0.00</span></div>
+        <div class="line"><span>Monthly HOA</span><span id="hoaMoOut">$0.00</span></div>
 
         <hr style="border:0;border-top:1px solid var(--border);margin:12px 0;">
 
@@ -561,6 +568,7 @@
             <tr><td>P&I Payment</td><td id="tdPiA">-</td><td id="tdPiB">-</td></tr>
             <tr><td>Monthly MI</td><td id="tdMiA">-</td><td id="tdMiB">-</td></tr>
             <tr><td>Escrows (Tax/Ins)</td><td id="tdEscrowA">-</td><td id="tdEscrowB">-</td></tr>
+            <tr><td>Monthly HOA</td><td id="tdHoaA">-</td><td id="tdHoaB">-</td></tr>
             <tr class="comp-highlight"><td>Total PITI</td><td id="tdPitiA">-</td><td id="tdPitiB">-</td></tr>
           </tbody>
         </table>
@@ -646,8 +654,8 @@ let calculatedOutputs = {
 };
 
 let scenarios = {
-  A: { mode: "purchase", price: "400,000", downCash: "40,000", downPct: "10", homeValue: "400,000", refiLoanAmt: "360,000", refiLtv: "90", rate: "6.5", term: "30", loanType: "Conventional", creditScore: "760", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", targetPiti: "2,500", targetDownCash: "25,000" },
-  B: { mode: "purchase", price: "400,000", downCash: "14,000", downPct: "3.5", homeValue: "400,000", refiLoanAmt: "386,000", refiLtv: "96.5", rate: "6.5", term: "30", loanType: "FHA", creditScore: "720", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", targetPiti: "2,500", targetDownCash: "25,000" }
+  A: { mode: "purchase", price: "400,000", downCash: "40,000", downPct: "10", homeValue: "400,000", refiLoanAmt: "360,000", refiLtv: "90", rate: "6.5", term: "30", loanType: "Conventional", creditScore: "760", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", hoa: "0", targetPiti: "2,500", targetDownCash: "25,000" },
+  B: { mode: "purchase", price: "400,000", downCash: "14,000", downPct: "3.5", homeValue: "400,000", refiLoanAmt: "386,000", refiLtv: "96.5", rate: "6.5", term: "30", loanType: "FHA", creditScore: "720", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", hoa: "0", targetPiti: "2,500", targetDownCash: "25,000" }
 };
 
 const pmiMatrix = {
@@ -691,6 +699,7 @@ function switchActiveSlot(slot) {
   document.getElementById("manualMi").value = data.manualMi;
   document.getElementById("taxes").value = data.taxes;
   document.getElementById("ins").value = data.ins;
+  document.getElementById("hoa").value = data.hoa || "0";
   document.getElementById("targetPiti").value = data.targetPiti;
   document.getElementById("targetDownCash").value = data.targetDownCash;
 
@@ -702,6 +711,7 @@ function switchActiveSlot(slot) {
   document.getElementById("rateSlider").value = parseFloat(data.rate) || 6.5;
   document.getElementById("taxesSlider").value = parseNum(data.taxes);
   document.getElementById("insSlider").value = parseNum(data.ins);
+  document.getElementById("hoaSlider").value = parseNum(data.hoa || "0");
   document.getElementById("targetPitiSlider").value = parseNum(data.targetPiti);
   document.getElementById("targetDownCashSlider").value = parseNum(data.targetDownCash);
 
@@ -726,6 +736,7 @@ function autoSaveCurrentInputs() {
     manualMi: document.getElementById("manualMi").value,
     taxes: document.getElementById("taxes").value,
     ins: document.getElementById("ins").value,
+    hoa: document.getElementById("hoa").value,
     targetPiti: document.getElementById("targetPiti").value,
     targetDownCash: document.getElementById("targetDownCash").value
   };
@@ -816,7 +827,7 @@ function syncSliderToText(sliderId, textId) {
   const val = document.getElementById(sliderId).value;
   const textInput = document.getElementById(textId);
   textInput.value = val;
-  if (["price","homeValue","refiLoanAmt","taxes","ins","targetPiti","targetDownCash"].includes(textId)) formatNumber(textInput);
+  if (["price","homeValue","refiLoanAmt","taxes","ins","hoa","targetPiti","targetDownCash"].includes(textId)) formatNumber(textInput);
   isSyncing = false;
 }
 function syncTextToSlider(textId, sliderId) {
@@ -883,6 +894,7 @@ function runEngineCoreCalculations(data) {
   const termYears = parseInt(data.term, 10) || 30;
   const taxesYr = parseNum(data.taxes);
   const insYr = parseNum(data.ins);
+  const hoaMo = parseNum(data.hoa || "0");
   const loanType = data.loanType;
   const totalPayments = termYears * 12;
   const rateMo = rateAnnual / 12;
@@ -963,7 +975,7 @@ function runEngineCoreCalculations(data) {
   }
   
   const miMo = (loanAmt * miFactor) / 12;
-  const totalPiti = pi + miMo + taxMo + insMo;
+  const totalPiti = pi + miMo + taxMo + insMo + hoaMo;
 
   return {
     mode: data.mode,
@@ -977,6 +989,7 @@ function runEngineCoreCalculations(data) {
     miMo,
     taxMo,
     insMo,
+    hoaMo,
     totalPiti,
     rate: data.rate,
     term: data.term,
@@ -1033,6 +1046,7 @@ function calc() {
   document.getElementById("miOut").textContent = fmt(activeCalc.miMo);
   document.getElementById("taxMoOut").textContent = fmt(activeCalc.taxMo);
   document.getElementById("insMoOut").textContent = fmt(activeCalc.insMo);
+  document.getElementById("hoaMoOut").textContent = fmt(activeCalc.hoaMo);
   
   if (mode === "target") {
     document.getElementById("pitiOut").textContent = fmt(parseNum(scenarios[currentScenarioSlot].targetPiti));
@@ -1046,7 +1060,8 @@ function calc() {
     [activeCalc.pi, "#005a9c"],
     [activeCalc.miMo, "#4ae290"],
     [activeCalc.taxMo, "#e2be4a"],
-    [activeCalc.insMo, "#e24a4a"]
+    [activeCalc.insMo, "#e24a4a"],
+    [activeCalc.hoaMo, "#b07ae2"]
   ]);
 }
 
@@ -1108,6 +1123,9 @@ function updateMatrixComparisonUI() {
   document.getElementById("tdEscrowA").textContent = fmt(a.taxMo + a.insMo);
   document.getElementById("tdEscrowB").textContent = fmt(b.taxMo + b.insMo);
 
+  document.getElementById("tdHoaA").textContent = fmt(a.hoaMo);
+  document.getElementById("tdHoaB").textContent = fmt(b.hoaMo);
+
   document.getElementById("tdPitiA").textContent = a.mode === "target" ? fmt(parseNum(scenarios.A.targetPiti)) : fmt(a.totalPiti);
   document.getElementById("tdPitiB").textContent = b.mode === "target" ? fmt(parseNum(scenarios.B.targetPiti)) : fmt(b.totalPiti);
 }
@@ -1157,6 +1175,7 @@ Scenario B:
 • Monthly MI: ${document.getElementById("miOut").textContent}
 • Monthly Taxes: ${document.getElementById("taxMoOut").textContent}
 • Monthly Insurance: ${document.getElementById("insMoOut").textContent}
+• Monthly HOA: ${document.getElementById("hoaMoOut").textContent}
 • ${totalLabel}: ${totalAmt}`;
   }
   return summaryText;
