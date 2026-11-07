@@ -83,7 +83,7 @@ html[data-look="classic"] .btn:not(.primary) { border: 1px solid var(--line); co
 html[data-look] .sheet .btn:not(.primary) { background: var(--surface); }
 
 .lo-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
-.lo-txt label { font-size: 10.5px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.lo-txt label { font-size: 11px; font-weight: 600; color: color-mix(in srgb, var(--ink) 75%, transparent); letter-spacing: .02em; }
 .lo-chip { padding-block: 5px; }
 .lo-chip.unset { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .lo-chip select { border: 0; background: transparent; font-weight: 600; padding: 2px 0; cursor: pointer; }
@@ -127,7 +127,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; marg
 /* Phones: tighter spacing, no sliders, no panel headings, so the inputs fit on about one screen. */
 @media (max-width: 600px) {
   .wrap { padding-block: 0 96px; }
-  header.top { padding-block: 10px; gap: 10px; flex-wrap: nowrap; }
+  /* iPhones fade whatever sits at the very top edge; start the header below that zone. */
+  header.top { padding-block: 28px 12px; gap: 10px; flex-wrap: nowrap; }
   .logo { height: 34px; }
   .brand { display: none; }
   .grid { gap: 16px; }
