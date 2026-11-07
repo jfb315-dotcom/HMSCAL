@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>HMS Mortgage Calculator</title>
 <link rel="icon" href="email-logo.png">
+<meta name="theme-color" content="#eef3f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1622" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap">
@@ -47,6 +49,10 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* Keep the page clear of the iPhone clock and battery (and the notch or island), including
+   as a home screen app; the band behind them hides content scrolling underneath. */
+body { padding-top: env(safe-area-inset-top, 0px); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 30; }
 img { max-width: 100%; }
 body { margin: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
@@ -219,7 +225,7 @@ details.costs .inner { padding: 0 18px 18px; display: flex; flex-direction: colu
 }
 
 /* Share modal */
-.overlay { position: fixed; inset: 0; background: rgba(6,14,24,.7); z-index: 40; display: grid; justify-items: center; align-items: start; padding: calc(env(safe-area-inset-top, 0px) + 64px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); overflow-y: auto; }
+.overlay { position: fixed; inset: 0; background: rgba(6,14,24,.94); z-index: 40; display: grid; justify-items: center; align-items: start; padding: calc(env(safe-area-inset-top, 0px) + 64px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); overflow-y: auto; }
 #quoteImg { width: 100%; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.35); -webkit-touch-callout: default; }
 .sheet { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; }
 .quote { background: #ffffff; color: #10243a; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
@@ -231,7 +237,9 @@ details.costs .inner { padding: 0 18px 18px; display: flex; flex-direction: colu
 .quote .qk { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #586b82; margin-top: 10px; }
 .quote .qv { font-family: var(--f-display); font-size: 40px; font-weight: 700; color: #0d3f73; }
 .quote .qv small { font-size: 15px; color: #586b82; font-family: var(--f-body); }
-.quote .ql { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid #e3e9f1; font-size: 14px; font-variant-numeric: tabular-nums; }
+.quote .ql { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid #e3e9f1; font-size: 14px; }
+/* The picture maker (html2canvas) ignores same-width digits, which shifted short amounts left in the saved image. */
+.quote, .quote * { font-variant-numeric: normal; }
 .quote .qlo { display: flex; gap: 10px; align-items: center; background: #f2f6fb; border-radius: 12px; padding: 10px 12px; margin-top: 12px; font-size: 13px; }
 .quote .qlo .av { width: 36px; height: 36px; border-radius: 50%; background: #0d3f73; color: #fff; display: grid; place-items: center; font-weight: 700; flex: none; }
 .quote .qf { font-size: 10.5px; color: #586b82; padding: 10px 18px 14px; line-height: 1.4; border-top: 1px solid #e3e9f1; }
@@ -393,7 +401,7 @@ details.costs .inner { padding: 0 18px 18px; display: flex; flex-direction: colu
     <div class="field"><label for="addr" style="color:#e8eef6">Property or listing (optional, shows at the top of the card)</label><div class="box" style="background:#fff;color:#10243a"><input id="addr" placeholder="123 Oak St, Cleveland" style="font-size:16px"></div></div>
     <div class="quote" id="quote"></div>
     <img id="quoteImg" alt="Payment estimate picture" hidden>
-    <div class="bar"><button class="btn primary" id="qImg" style="grid-column:auto">Share picture</button><button class="btn" id="qCopy">Copy as text</button></div>
+    <div class="bar"><button class="btn primary" id="qImg" style="grid-column:auto">Share picture</button></div>
     <button class="btn" id="qClose">Done</button>
     <div class="note" id="qNote">Share picture makes an image of this card to text or email.</div>
   </div>
@@ -618,7 +626,6 @@ async function copyText(btn) {
   setTimeout(() => btn.textContent = old, 1600);
 }
 $("copy").onclick = e => copyText(e.currentTarget);
-$("qCopy").onclick = e => copyText(e.currentTarget);
 // Text the loan officer: the customer adds their contact info and the quote,
 // and their phone's messaging app opens with it filled in.
 $("cText").onclick = () => { $("textTitle").textContent = "Text " + LOS[lo].name; $("textOverlay").hidden = false; $("tName").focus(); };
