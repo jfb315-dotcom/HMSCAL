@@ -225,7 +225,7 @@ details.costs .inner { padding: 0 18px 18px; display: flex; flex-direction: colu
 }
 
 /* Share modal */
-.overlay { position: fixed; inset: 0; background: rgba(6,14,24,.7); z-index: 40; display: grid; justify-items: center; align-items: start; padding: calc(env(safe-area-inset-top, 0px) + 64px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); overflow-y: auto; }
+.overlay { position: fixed; inset: 0; background: rgba(6,14,24,.94); z-index: 40; display: grid; justify-items: center; align-items: start; padding: calc(env(safe-area-inset-top, 0px) + 64px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); overflow-y: auto; }
 #quoteImg { width: 100%; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.35); -webkit-touch-callout: default; }
 .sheet { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; }
 .quote { background: #ffffff; color: #10243a; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
@@ -401,7 +401,7 @@ details.costs .inner { padding: 0 18px 18px; display: flex; flex-direction: colu
     <div class="field"><label for="addr" style="color:#e8eef6">Property or listing (optional, shows at the top of the card)</label><div class="box" style="background:#fff;color:#10243a"><input id="addr" placeholder="123 Oak St, Cleveland" style="font-size:16px"></div></div>
     <div class="quote" id="quote"></div>
     <img id="quoteImg" alt="Payment estimate picture" hidden>
-    <div class="bar"><button class="btn primary" id="qImg" style="grid-column:auto">Share picture</button><button class="btn" id="qCopy">Copy as text</button></div>
+    <div class="bar"><button class="btn primary" id="qImg" style="grid-column:auto">Share picture</button></div>
     <button class="btn" id="qClose">Done</button>
     <div class="note" id="qNote">Share picture makes an image of this card to text or email.</div>
   </div>
@@ -626,7 +626,6 @@ async function copyText(btn) {
   setTimeout(() => btn.textContent = old, 1600);
 }
 $("copy").onclick = e => copyText(e.currentTarget);
-$("qCopy").onclick = e => copyText(e.currentTarget);
 // Text the loan officer: the customer adds their contact info and the quote,
 // and their phone's messaging app opens with it filled in.
 $("cText").onclick = () => { $("textTitle").textContent = "Text " + LOS[lo].name; $("textOverlay").hidden = false; $("tName").focus(); };
