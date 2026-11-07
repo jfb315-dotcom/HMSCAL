@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>HMS Mortgage Calculator</title>
 <link rel="icon" href="email-logo.png">
+<meta name="theme-color" content="#eef3f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1622" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap">
@@ -47,6 +49,10 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* Keep the page clear of the iPhone clock and battery (and the notch or island), including
+   as a home screen app; the band behind them hides content scrolling underneath. */
+body { padding-top: env(safe-area-inset-top, 0px); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 30; }
 img { max-width: 100%; }
 body { margin: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
