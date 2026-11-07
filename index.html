@@ -463,7 +463,7 @@
     </div>
 
     <label>Loan Type</label>
-    <select id="loanType" onchange="updateProgramInputs(); syncAndCalc()">
+    <select id="loanType" onchange="onLoanTypeChange()">
       <option value="Conventional">Conventional</option>
       <option value="FHA">FHA</option>
       <option value="VA">VA</option>
@@ -659,7 +659,7 @@ let calculatedOutputs = {
 
 let scenarios = {
   A: { mode: "purchase", price: "400,000", downCash: "40,000", downPct: "10", homeValue: "400,000", refiLoanAmt: "360,000", refiLtv: "90", rate: "6.5", term: "30", loanType: "Conventional", creditScore: "760", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", hoa: "0", targetPiti: "2,500", targetDownCash: "25,000" },
-  B: { mode: "purchase", price: "400,000", downCash: "14,000", downPct: "3.5", homeValue: "400,000", refiLoanAmt: "386,000", refiLtv: "96.5", rate: "6.5", term: "30", loanType: "FHA", creditScore: "720", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", hoa: "0", targetPiti: "2,500", targetDownCash: "25,000" }
+  B: { mode: "purchase", price: "400,000", downCash: "14,000", downPct: "3.5", homeValue: "400,000", refiLoanAmt: "386,000", refiLtv: "96.5", rate: "6.25", term: "30", loanType: "FHA", creditScore: "720", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", hoa: "0", targetPiti: "2,500", targetDownCash: "25,000" }
 };
 
 // Conventional PMI, annual rate by credit score and LTV, from the
@@ -1281,27 +1281,43 @@ async function saveScreenshot() {
 }
 
 // Starting rate: the latest Freddie Mac weekly national average 30-year fixed
-// rate, from the data file the market dashboard refreshes several times a day.
-// If it can't be loaded, the calculator keeps its built-in 6.5%.
-const DEFAULT_RATE = "6.5";
+// rate, rounded down to the eighth, from the data file the market dashboard
+// refreshes several times a day. FHA, VA and USDA start 0.25% lower.
+// If the file can't be loaded, the calculator starts from 6.5%.
+let baseRate = 6.5;
+function programRate(loanType, base) { return loanType === "Conventional" ? base : base - 0.25; }
+// True while a rate is still one the calculator filled in, not one the user typed.
+function isAutoRate(rateText, base) {
+  const v = parseFloat(rateText);
+  return v === base || v === base - 0.25;
+}
+function setRateInput(value) {
+  document.getElementById("rate").value = String(value);
+  document.getElementById("rateSlider").value = value;
+}
+function onLoanTypeChange() {
+  const type = document.getElementById("loanType").value;
+  if (isAutoRate(document.getElementById("rate").value, baseRate)) setRateInput(programRate(type, baseRate));
+  updateProgramInputs();
+  syncAndCalc();
+}
 async function loadNationalAverageRate() {
   try {
     const res = await fetch("https://jfb315-dotcom.github.io/data/market.json", { cache: "no-store" });
     const series = (await res.json()).series.MORTGAGE30US;
-    const rate = series.v[series.v.length - 1];
+    const avg = series.v[series.v.length - 1];
     const date = series.d[series.d.length - 1];
-    if (!(rate >= 2 && rate <= 12)) return;
-    const rateText = String(rate);
-    // Only replace the starting rate, never one the user has already changed.
+    if (!(avg >= 2 && avg <= 12)) return;
+    const newBase = Math.floor(avg * 8 + 1e-9) / 8;
+    // Move only rates the calculator filled in, never one the user changed.
     const other = currentScenarioSlot === "A" ? "B" : "A";
-    if (scenarios[other].rate === DEFAULT_RATE) scenarios[other].rate = rateText;
-    if (document.getElementById("rate").value === DEFAULT_RATE) {
-      document.getElementById("rate").value = rateText;
-      document.getElementById("rateSlider").value = rate;
-    }
+    if (isAutoRate(scenarios[other].rate, baseRate)) scenarios[other].rate = String(programRate(scenarios[other].loanType, newBase));
+    if (isAutoRate(document.getElementById("rate").value, baseRate)) setRateInput(programRate(document.getElementById("loanType").value, newBase));
+    baseRate = newBase;
     const weekOf = new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
     document.getElementById("rateSource").textContent =
-      "National average 30-yr fixed: " + rate.toFixed(2) + "% (Freddie Mac, " + weekOf + ")";
+      "National average 30-yr fixed: " + avg.toFixed(2) + "% (Freddie Mac, " + weekOf + "). Starts at " +
+      newBase + "% rounded down; FHA, VA and USDA start 0.25% lower.";
     syncAndCalc();
   } catch (e) { /* keep the built-in rate */ }
 }
