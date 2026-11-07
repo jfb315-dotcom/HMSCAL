@@ -449,6 +449,7 @@
         <label>Interest Rate %</label>
         <input id="rate" type="text" inputmode="decimal" value="6.5" oninput="syncTextToSlider('rate', 'rateSlider'); syncAndCalc()" />
         <input id="rateSlider" type="range" min="2" max="12" step="0.125" value="6.5" oninput="syncSliderToText('rateSlider', 'rate'); syncAndCalc()" />
+        <div id="rateSource" style="color: var(--muted); font-size: 12px; margin-top: 4px;"></div>
       </div>
       <div>
         <label>Loan Term (Years)</label>
@@ -1279,7 +1280,33 @@ async function saveScreenshot() {
   };
 }
 
-window.onload = () => { updateProgramInputs(); calc(); };
+// Starting rate: the latest Freddie Mac weekly national average 30-year fixed
+// rate, from the data file the market dashboard refreshes several times a day.
+// If it can't be loaded, the calculator keeps its built-in 6.5%.
+const DEFAULT_RATE = "6.5";
+async function loadNationalAverageRate() {
+  try {
+    const res = await fetch("https://jfb315-dotcom.github.io/data/market.json", { cache: "no-store" });
+    const series = (await res.json()).series.MORTGAGE30US;
+    const rate = series.v[series.v.length - 1];
+    const date = series.d[series.d.length - 1];
+    if (!(rate >= 2 && rate <= 12)) return;
+    const rateText = String(rate);
+    // Only replace the starting rate, never one the user has already changed.
+    const other = currentScenarioSlot === "A" ? "B" : "A";
+    if (scenarios[other].rate === DEFAULT_RATE) scenarios[other].rate = rateText;
+    if (document.getElementById("rate").value === DEFAULT_RATE) {
+      document.getElementById("rate").value = rateText;
+      document.getElementById("rateSlider").value = rate;
+    }
+    const weekOf = new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    document.getElementById("rateSource").textContent =
+      "National average 30-yr fixed: " + rate.toFixed(2) + "% (Freddie Mac, " + weekOf + ")";
+    syncAndCalc();
+  } catch (e) { /* keep the built-in rate */ }
+}
+
+window.onload = () => { updateProgramInputs(); calc(); loadNationalAverageRate(); };
 </script>
 </body>
 </html>
