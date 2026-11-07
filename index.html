@@ -389,8 +389,7 @@
       <label>Estimated Credit Score</label>
       <select id="creditScore" onchange="syncAndCalc()">
         <option value="760">760+ (Excellent)</option>
-        <option value="740">740 - 759 (Very Good)</option>
-        <option value="720">720 - 739 (Very Good)</option>
+        <option value="720">720 - 759 (Very Good)</option>
         <option value="700">700 - 719 (Good)</option>
         <option value="680">680 - 699 (Good)</option>
         <option value="660">660 - 679 (Fair)</option>
@@ -662,18 +661,20 @@ let scenarios = {
   B: { mode: "purchase", price: "400,000", downCash: "14,000", downPct: "3.5", homeValue: "400,000", refiLoanAmt: "386,000", refiLtv: "96.5", rate: "6.5", term: "30", loanType: "FHA", creditScore: "720", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", hoa: "0", targetPiti: "2,500", targetDownCash: "25,000" }
 };
 
-// Estimated borrower-paid monthly PMI, annual rate by credit score and LTV
-// (over95 = 95.01-97%, over90 = 90.01-95%, over85 = 85.01-90%, over80 = 80.01-85%).
-// These are estimates; a real MI quote typed into the override box always wins.
+// Conventional PMI, annual rate by credit score and LTV, from the
+// mortgage-info.com "PMI Rates by Credit Score 2026" chart (updated Sept 1, 2026).
+// over90 = 5% down chart (90.01-95% LTV), over85 = 10% down chart (85.01-90%),
+// over80 = 15% down chart (80.01-85%). The chart has no 3% down column, so
+// over95 (95.01-97% LTV) uses the 5% down rate.
+// A real MI quote typed into the override box always wins.
 const pmiMatrix = {
-  "760": { over95: 0.0046, over90: 0.0038, over85: 0.0028, over80: 0.0018 },
-  "740": { over95: 0.0055, over90: 0.0046, over85: 0.0034, over80: 0.0021 },
-  "720": { over95: 0.0065, over90: 0.0053, over85: 0.0038, over80: 0.0024 },
-  "700": { over95: 0.0079, over90: 0.0063, over85: 0.0046, over80: 0.0029 },
-  "680": { over95: 0.0094, over90: 0.0074, over85: 0.0054, over80: 0.0034 },
-  "660": { over95: 0.0117, over90: 0.0092, over85: 0.0065, over80: 0.0041 },
-  "640": { over95: 0.0141, over90: 0.0110, over85: 0.0076, over80: 0.0048 },
-  "620": { over95: 0.0163, over90: 0.0132, over85: 0.0094, over80: 0.0058 }
+  "760": { over95: 0.0028, over90: 0.0028, over85: 0.0016, over80: 0.0010 },
+  "720": { over95: 0.0036, over90: 0.0036, over85: 0.0025, over80: 0.0016 },
+  "700": { over95: 0.0054, over90: 0.0054, over85: 0.0037, over80: 0.0025 },
+  "680": { over95: 0.0078, over90: 0.0078, over85: 0.0056, over80: 0.0037 },
+  "660": { over95: 0.0102, over90: 0.0102, over85: 0.0078, over80: 0.0054 },
+  "640": { over95: 0.0138, over90: 0.0138, over85: 0.0108, over80: 0.0078 },
+  "620": { over95: 0.0186, over90: 0.0186, over85: 0.0150, over80: 0.0110 }
 };
 
 function setMode(m) {
@@ -1043,8 +1044,7 @@ function calc() {
 
   const scoreLabels = {
     "760": "760+ (Excellent)",
-    "740": "740 - 759 (Very Good)",
-    "720": "720 - 739 (Very Good)",
+    "720": "720 - 759 (Very Good)",
     "700": "700 - 719 (Good)",
     "680": "680 - 699 (Good)",
     "660": "660 - 679 (Fair)",
