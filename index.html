@@ -1,1328 +1,708 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-look="classic">
 <head>
-  <meta charset="UTF-8" />
-  <title>HMS Mortgage Calculator Pro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HMS Mortgage Calculator</title>
+<link rel="icon" href="email-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap">
 <style>
-    :root {
-      --bg: #002240;       
-      --card: #00335c;     
-      --border: #1a4a73;   
-      --accent: #005a9c;   
-      --text: #ffffff;     
-      --muted: #8cb1d0;    
-    }
-/* Tighten the card layout for better proportion */
-#results {
-    max-width: 320px !important; 
-    padding: 15px !important;    
-    margin: 20px auto !important;
+/* Layout: inputs on the left, a sticky payment card on the right; on phones one column with a pinned payment bar. */
+:root {
+  --bg: #eef3f9;
+  --surface: #ffffff;
+  --sunken: #f5f8fc;
+  --ink: #10243a;
+  --muted: #586b82;
+  --line: #d8e1ec;
+  --accent: #0d4f91;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2edf8;
+  --good: #1d7a55;
+  --c-pi: #0d4f91;
+  --c-mi: #23a39a;
+  --c-tax: #d99a1e;
+  --c-ins: #d4594a;
+  --c-hoa: #8a5cc7;
+  /* Loan payment gets a soft tint so the bar reads as "your loan, plus these costs" instead of one heavy block. */
+  --c-pi-soft: color-mix(in srgb, var(--c-pi) 30%, var(--surface));
+  --shadow: 0 1px 2px rgba(16,36,58,.06), 0 8px 24px rgba(16,36,58,.08);
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1622; --surface: #12212f; --sunken: #0e1b28; --ink: #e8eef6; --muted: #94a6ba; --line: #23384c;
+  --accent: #5ea6ec; --accent-ink: #06121e; --accent-soft: #16304a; --good: #5cc79a;
+  --c-pi: #5ea6ec; --c-mi: #3cc4b9; --c-tax: #e8b445; --c-ins: #ec7a6b; --c-hoa: #ad86e6;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3); color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0b1622; --surface: #12212f; --sunken: #0e1b28; --ink: #e8eef6; --muted: #94a6ba; --line: #23384c;
+  --accent: #5ea6ec; --accent-ink: #06121e; --accent-soft: #16304a; --good: #5cc79a;
+  --c-pi: #5ea6ec; --c-mi: #3cc4b9; --c-tax: #e8b445; --c-ins: #ec7a6b; --c-hoa: #ad86e6;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 120px; }
+.num { font-variant-numeric: tabular-nums; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.long { display: inline; }
+.unused-mock-strip { background: var(--accent-soft); color: var(--muted); font-size: 12px; text-align: center; padding-block: 6px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { display: flex; align-items: center; gap: 14px; padding-block: 16px; flex-wrap: wrap; }
+.logo { height: 44px; width: auto; border-radius: 6px; }
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand b { font-family: var(--f-display); font-size: 20px; letter-spacing: -.01em; }
+.brand span { color: var(--muted); font-size: 13px; }
+.top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.lo-chip { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px 4px 4px; font-size: 13px; }
+.lo-chip .av { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+/* Look: Classic (gray hairlines, white raised selection) */
+html[data-look="classic"] body .box, html[data-look="classic"] body .stepper button, html[data-look="classic"] body .lo-chip, html[data-look="classic"] body .icon-btn, html[data-look="classic"] body details.costs { border: 1px solid var(--line); }
+html[data-look="classic"] body .stepper button { color: var(--ink); }
+html[data-look="classic"] .icon-btn svg { stroke: var(--ink); }
+html[data-look="classic"] .seg { border: 1px solid var(--line); background: var(--sunken); padding: 3px; gap: 3px; }
+html[data-look="classic"] .seg button + button::before { display: none; }
+html[data-look="classic"] .seg button[aria-pressed="true"] { background: var(--surface); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent), 0 1px 3px rgba(16,36,58,.18); font-weight: 700; }
+html[data-look="classic"] .btn:not(.primary) { border: 1px solid var(--line); color: var(--ink); }
+
+html[data-look] .sheet .btn:not(.primary) { background: var(--surface); }
+
+.lo-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.lo-txt label { font-size: 10.5px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.lo-chip { padding-block: 5px; }
+.lo-chip.unset { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.lo-chip select { border: 0; background: transparent; font-weight: 600; padding: 2px 0; cursor: pointer; }
+.icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; }
+.icon-btn svg { width: 18px; height: 18px; stroke: var(--ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.seg { display: inline-flex; background: var(--sunken); border: 1px solid var(--line); border-radius: 12px; padding: 3px; gap: 3px; width: 100%; }
+.seg button { flex: 1; border: 0; background: transparent; border-radius: 9px; padding: 9px 8px; font-weight: 600; font-size: 14px; color: var(--muted); cursor: pointer; min-height: 40px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(16,36,58,.15); }
+.seg.small button { padding: 6px; min-height: 36px; font-size: 13px; }
+/* Every switch (mode, loan type, term, compare) shares one look: blue outline, dividers, filled selection. */
+.seg { padding: 4px; gap: 0; background: var(--surface); border: 1.5px solid var(--accent); }
+.seg button { position: relative; color: var(--ink); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.seg button + button::before { content: ""; position: absolute; left: 0; top: 24%; bottom: 24%; width: 1px; background: var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+.seg button[aria-pressed="true"]::before, .seg button[aria-pressed="true"] + button::before { display: none; }
+.mode-seg button { font-size: 15px; }
+.btn:not(.primary) { border: 1.5px solid var(--accent); color: var(--accent); white-space: nowrap; }
+body .box, body .stepper button, body .lo-chip, body .icon-btn, body details.costs { border: 1.5px solid var(--accent); }
+body .stepper button { color: var(--accent); }
+.icon-btn svg { stroke: var(--accent); }
+.mode-seg svg { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 28px; align-items: start; }
+.inputs { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+.panel h2 { margin: 0; font-family: var(--f-display); font-size: 17px; letter-spacing: -.01em; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field label, .lbl { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .01em; }
+.box { display: flex; align-items: center; background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; min-height: 46px; padding: 0 12px; gap: 6px; }
+.box:focus-within { border-color: var(--accent); background: var(--surface); }
+.box input, .box select { border: 0; background: transparent; outline: none; width: 100%; min-width: 0; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 10px 0; }
+.box select { font-size: 15px; cursor: pointer; }
+.box .pre, .box .suf { color: var(--muted); font-weight: 600; }
+.hint { font-size: 12.5px; color: var(--muted); }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.stepper { display: grid; grid-template-columns: 46px 1fr 46px; gap: 6px; }
+.stepper button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; font-size: 20px; font-weight: 600; cursor: pointer; }
+.field label .avg { float: right; font-weight: 500; font-size: 12px; }
+/* Phones: tighter spacing, no sliders, no panel headings, so the inputs fit on about one screen. */
+@media (max-width: 600px) {
+  .wrap { padding-block: 0 96px; }
+  header.top { padding-block: 10px; gap: 10px; flex-wrap: nowrap; }
+  .logo { height: 34px; }
+  .brand { display: none; }
+  .grid { gap: 16px; }
+  .inputs { gap: 12px; }
+  .panel { padding: 14px; gap: 12px; border-radius: 12px; }
+  .panel h2 { display: none; }
+  .field { gap: 4px; }
+  .box { min-height: 42px; }
+  .box input { font-size: 16px; padding: 8px 0; }
+  .stepper { grid-template-columns: 42px 1fr 42px; }
+  input[type=range] { display: none; }
+  .seg button { min-height: 36px; padding: 6px; }
+  details.costs summary { padding: 12px 14px; }
+  details.costs .inner { padding: 0 14px 14px; gap: 12px; }
+  .card { padding: 16px; }
+  .facts { gap: 8px; margin-top: 12px; }
+  .fact { padding: 8px 10px; }
+  .fact .v { font-size: 15px; }
+  .rows { margin-top: 12px; }
+  .rows .r { padding: 6px 0; }
+}
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); background: var(--sunken); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; width: fit-content; }
+.chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+
+details.costs { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+details.costs summary { list-style: none; cursor: pointer; padding: 16px 18px; display: flex; align-items: center; gap: 10px; }
+details.costs summary::-webkit-details-marker { display: none; }
+details.costs summary b { font-family: var(--f-display); font-size: 17px; }
+details.costs summary .sum { margin-left: auto; font-weight: 700; }
+details.costs summary .chev { width: 18px; height: 18px; stroke: var(--muted); fill: none; stroke-width: 2; transition: transform .2s; }
+details.costs[open] summary .chev { transform: rotate(90deg); }
+details.costs .inner { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+
+/* Results */
+.results { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 22px; }
+.pay-head { display: flex; align-items: center; gap: 18px; }
+.ring { width: 118px; height: 118px; flex: none; }
+.pay-k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.pay-v { font-family: var(--f-display); font-size: 42px; font-weight: 700; letter-spacing: -.02em; line-height: 1.05; }
+.pay-v small { font-size: 16px; color: var(--muted); font-weight: 600; font-family: var(--f-body); letter-spacing: 0; }
+.pay-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.rows { margin-top: 18px; display: flex; flex-direction: column; }
+.rows .r { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+.rows .r:first-child { border-top: 0; }
+.rows .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.rows .r span:last-child { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 10px; margin-top: 16px; }
+.fact .n { font-size: 11.5px; color: var(--muted); }
+.stack { display: flex; gap: 3px; height: 12px; border-radius: 999px; overflow: hidden; margin-top: 16px; }
+.stack span { min-width: 4px; }
+.disc { font-size: 11.5px; line-height: 1.4; color: var(--muted); margin: 14px 0 0; }
+.fact { background: var(--sunken); border-radius: 10px; padding: 10px 12px; }
+.fact .k { font-size: 12px; color: var(--muted); font-weight: 600; }
+.fact .v { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 16px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn { border-radius: 12px; min-height: 46px; padding: 10px 14px; font-weight: 700; cursor: pointer; border: 1px solid var(--line); background: var(--surface); }
+.btn.primary { grid-column: 1 / -1; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.contact { display: flex; align-items: center; gap: 12px; }
+.contact .av { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; flex: none; }
+.contact .who { min-width: 0; }
+.contact .who b { display: block; }
+.contact .who span { color: var(--muted); font-size: 13px; user-select: all; }
+.contact { flex-wrap: wrap; }
+.contact .cbtns { margin-left: auto; display: flex; gap: 8px; }
+.contact .btn { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
+/* Compare */
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cmp .col { background: var(--sunken); border-radius: 12px; padding: 12px; border: 2px solid transparent; cursor: pointer; text-align: left; }
+.cmp .col.active { border-color: var(--accent); }
+.cmp .tag { font-size: 12px; font-weight: 700; color: var(--muted); }
+.cmp .big { font-family: var(--f-display); font-size: 26px; font-weight: 700; }
+.cmp .mini { font-size: 12.5px; color: var(--muted); }
+.diff { margin-top: 12px; font-size: 14px; background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; }
+.scen-tabs { display: none; }
+.comparing .scen-tabs { display: flex; }
+
+/* Phone pay bar */
+.paybar { display: none; }
+@media (max-width: 899px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .results { position: static; }
+  .paybar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; align-items: center; gap: 12px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(16,36,58,.12); padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .paybar .v { font-family: var(--f-display); font-size: 26px; font-weight: 700; line-height: 1; }
+  .paybar .s { font-size: 12px; color: var(--muted); }
+  .paybar .btn { margin-left: auto; min-height: 42px; }
+}
+@media (max-width: 420px) {
+  .lo-chip { min-width: 0; }
+  .lo-chip select { max-width: 100%; min-width: 0; }
+  .long { display: none; }
+  .pay-v { font-size: 36px; }
+  .ring { width: 96px; height: 96px; }
 }
 
-/* Shrink the logo specifically */
-#results img {
-    max-width: 120px !important; 
-    margin-bottom: 10px !important;
-}
-
-/* Tighten the lines for a more compact look */
-#results .line {
-    font-size: 0.85rem !important; 
-    margin: 4px 0 !important;      
-}
-
-/* Adjust headings/totals */
-#results .big {
-    font-size: 1rem !important;
-    margin-top: 8px !important;
-}
-    * { box-sizing: border-box; }
-
-    @keyframes pulseGlow {
-      0% { box-shadow: 0 0 14px rgba(0,90,156,0.75), 0 0 28px rgba(0,90,156,0.45); }
-      50% { box-shadow: 0 0 22px rgba(0,90,156,1), 0 0 38px rgba(0,90,156,0.65); }
-      100% { box-shadow: 0 0 14px rgba(0,90,156,0.75), 0 0 28px rgba(0,90,156,0.45); }
-    }
-
-    /* Eye-catching pulse/glow animation for the high-intent callout button */
-    @keyframes featureGlow {
-      0% {
-        box-shadow: 0 0 4px rgba(226, 190, 74, 0.4), inset 0 0 4px rgba(226, 190, 74, 0.2);
-        border-color: #c9a33b;
-      }
-      50% {
-        box-shadow: 0 0 16px rgba(226, 190, 74, 0.85), inset 0 0 8px rgba(226, 190, 74, 0.4);
-        border-color: #fff;
-      }
-      100% {
-        box-shadow: 0 0 4px rgba(226, 190, 74, 0.4), inset 0 0 4px rgba(226, 190, 74, 0.2);
-        border-color: #c9a33b;
-      }
-    }
-
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .app {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 20px 16px 40px;
-    }
-
-    h1 { font-size: 1.5rem; margin: 0 0 4px; font-weight: 700; text-align: center; }
-    .subtitle { font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; text-align: center; }
-    h2 { font-size: 1.05rem; margin: 24px 0 10px; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
-
-    label { display: block; font-size: 0.8rem; margin-bottom: 4px; font-weight: 600; color: var(--muted); }
-
-    .toggle-row {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 16px;
-    }
-
-    .toggle-btn {
-      flex: 1;
-      padding: 10px 2px;
-      text-align: center;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: rgba(0, 34, 64, 0.5);
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .toggle-btn.active {
-      background: var(--accent);
-      color: #fff;
-      border-color: #fff;
-    }
-
-    /* Target specific standalone style for the active glowing feature mode */
-    .toggle-btn.glow-accent {
-      animation: featureGlow 2.5s infinite ease-in-out;
-      color: #fff;
-      font-weight: 700;
-    }
-    .toggle-btn.glow-accent.active {
-      background: #b58f16;
-      animation: none;
-      box-shadow: 0 0 14px rgba(226, 190, 74, 0.6);
-      border-color: #fff;
-    }
-
-    input[type="text"], input[type="email"], input[type="tel"], select {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #00172d;
-      color: var(--text);
-      font-size: 0.95rem;
-      margin-bottom: 6px;
-      appearance: none;
-    }
-
-    input:focus, select:focus {
-      outline: 1px solid var(--text);
-      border-color: var(--text);
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      background: transparent;
-      margin-bottom: 18px;
-    }
-
-    input[type="range"]:focus { outline: none; }
-
-    input[type="range"]::-webkit-slider-runnable-track {
-      width: 100%;
-      height: 6px;
-      cursor: pointer;
-      background: var(--border);
-      border-radius: 3px;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      height: 20px;
-      width: 20px;
-      border-radius: 50%;
-      background: var(--text);
-      border: 2px solid var(--accent);
-      cursor: pointer;
-      -webkit-appearance: none;
-      margin-top: -7px;
-    }
-
-    .row { display: flex; gap: 10px; }
-    .row > div { flex: 1; }
-
-    button {
-      width: 100%;
-      padding: 14px;
-      margin-top: 8px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--accent);
-      color: #fff;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-
-    button:hover { background: #006ec2; }
-
-    .card {
-      margin-top: 24px;
-      padding: 24px 18px;
-      border-radius: 12px;
-      background: var(--card);
-      border: 2px solid var(--border);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    }
-
-    .line {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.9rem;
-      margin: 7px 0;
-      color: #e2ecf5;
-    }
-
-    .big { font-size: 1.3rem; font-weight: 700; margin-top: 12px; color: #fff; }
-    .muted { font-size: 0.78rem; color: var(--muted); text-align: center; margin-top: 14px; letter-spacing: 0.5px; }
-
-    .chart-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 22px 0;
-    }
-
-    .donut-ring {
-      position: relative;
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    /* The ring is drawn on a canvas because the Share Image tool (html2canvas)
-       cannot draw CSS conic-gradients, so they came out blank in the image. */
-    #donutCanvas {
-      position: absolute;
-      inset: 0;
-      width: 140px;
-      height: 140px;
-    }
-
-    .donut-hole {
-      position: relative;
-      width: 92px;
-      height: 92px;
-      background: var(--card);
-      border-radius: 50%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-align: center;
-      padding: 4px;
-    }
-
-    .donut-total {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-top: 2px;
-    }
-
-    .legend-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      font-size: 0.8rem;
-      margin-bottom: 16px;
-      padding: 0 6px;
-    }
-
-    .legend-item { display: flex; align-items: center; gap: 8px; color: #e2ecf5; }
-    .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
-
-    /* Workspace Configurator */
-    .scenario-bank {
-      display: flex;
-      flex-direction: column;
-      background: rgba(0,23,45,0.6);
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      gap: 6px;
-      margin-bottom: 16px;
-    }
-    .scenario-row {
-      display: flex;
-      gap: 6px;
-    }
-    .scenario-btn {
-      flex: 1;
-      padding: 10px;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 0.8rem;
-      font-weight: 700;
-      cursor: pointer;
-      border-radius: 6px;
-      text-align: center;
-      margin-top: 0;
-      box-shadow: none;
-      transition: all 0.2s ease;
-    }
-    .scenario-btn.active {
-      background: var(--accent);
-      color: #fff;
-      border-color: #fff;
-    }
-
-    /* Side-by-Side Table Layout */
-    .comp-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-      font-size: 0.85rem;
-      color: #e2ecf5;
-    }
-    .comp-table th {
-      background: #00172d;
-      color: #fff;
-      font-weight: 600;
-      padding: 8px;
-      border: 1px solid var(--border);
-    }
-    .comp-table td {
-      padding: 8px;
-      border: 1px solid var(--border);
-    }
-    .comp-table tr:nth-child(even) {
-      background: rgba(0,0,0,0.1);
-    }
-    .comp-highlight {
-      font-weight: 700;
-      color: #fff;
-      background: rgba(0, 90, 156, 0.2);
-    }
-
-    .action-grid {
-      display: flex;
-      gap: 10px;
-      margin-top: 14px;
-      flex-wrap: wrap;
-    }
-    .action-grid button { margin-top: 0; flex: 1; min-width: 120px; }
-
-    /* Contact Pop-up Overlay styles */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,34,64,0.9);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 99999;
-      padding: 20px;
-    }
-    .modal-box {
-      background: #00335c;
-      padding: 24px;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 400px;
-      border: 2px solid var(--border);
-      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
-    }
-    .modal-box h3 { margin-top: 0; margin-bottom: 12px; color: #fff; font-size: 1.2rem; text-align: center; }
+/* Share modal */
+.overlay { position: fixed; inset: 0; background: rgba(6,14,24,.7); z-index: 40; display: grid; justify-items: center; align-items: start; padding: calc(env(safe-area-inset-top, 0px) + 64px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); overflow-y: auto; }
+#quoteImg { width: 100%; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.35); -webkit-touch-callout: default; }
+.sheet { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; }
+.quote { background: #ffffff; color: #10243a; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.quote .qh { background: #0d3f73; color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 12px; }
+.quote .qh img { height: 38px; border-radius: 4px; }
+.quote .qh div { font-size: 12px; opacity: .85; margin-left: auto; text-align: right; }
+.quote .qb { padding: 18px; }
+.quote .addr { font-weight: 700; font-size: 16px; }
+.quote .qk { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #586b82; margin-top: 10px; }
+.quote .qv { font-family: var(--f-display); font-size: 40px; font-weight: 700; color: #0d3f73; }
+.quote .qv small { font-size: 15px; color: #586b82; font-family: var(--f-body); }
+.quote .ql { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid #e3e9f1; font-size: 14px; font-variant-numeric: tabular-nums; }
+.quote .qlo { display: flex; gap: 10px; align-items: center; background: #f2f6fb; border-radius: 12px; padding: 10px 12px; margin-top: 12px; font-size: 13px; }
+.quote .qlo .av { width: 36px; height: 36px; border-radius: 50%; background: #0d3f73; color: #fff; display: grid; place-items: center; font-weight: 700; flex: none; }
+.quote .qf { font-size: 10.5px; color: #586b82; padding: 10px 18px 14px; line-height: 1.4; border-top: 1px solid #e3e9f1; }
+.sheet .bar { display: flex; gap: 10px; }
+.sheet .bar .btn { flex: 1; }
+.sheet .note { color: #e8eef6; font-size: 12.5px; text-align: center; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
-
 <body>
-  <div class="app">
-    <img src="email-logo.png" style="width:100%; max-width:280px; display:block; margin: 0 auto 16px; border-radius: 4px;" alt="Home Mortgage Solutions Logo" />
-<button onclick="window.location.reload();" style="width: 100%; margin-bottom: 20px; padding: 10px; background: #1a4a73; border: 1px solid #ffffff; color: #fff; font-size: 0.8rem; cursor: pointer; border-radius: 8px;">
-  ↻ Refresh / Reset Calculator
-</button>
-    <h1>Mortgage Calculator</h1>
-    <div class="subtitle">Home Mortgage Solutions, LLC</div>
-
-    <div class="toggle-row">
-      <div id="btnPurchase" class="toggle-btn active" onclick="setMode('purchase'); syncAndCalc()">Purchase</div>
-      <div id="btnRefi" class="toggle-btn" onclick="setMode('refi'); syncAndCalc()">Refinance</div>
-      <div id="btnTarget" class="toggle-btn glow-accent" onclick="setMode('target'); syncAndCalc()">What Can I Afford?</div>
-    </div>
-
-    <div class="scenario-bank">
-      <label style="margin-bottom:2px; text-align:center;">Compare multiple products</label>
-      <div class="scenario-row">
-        <div id="scenA" class="scenario-btn active" onclick="switchActiveSlot('A')">Scenario A</div>
-        <div id="scenB" class="scenario-btn" onclick="switchActiveSlot('B')">Scenario B</div>
+<div class="wrap" id="app">
+  <header class="top">
+    <img class="logo" alt="Home Mortgage Solutions" src="email-logo.png">
+    <div class="brand"><b>Payment Calculator</b><span>Home Mortgage Solutions</span></div>
+    <div class="top-actions">
+      <div class="lo-chip" title="Each loan officer gets their own link that fills this in">
+        <span class="av" id="loInit">JB</span>
+        <div class="lo-txt"><label for="lo">Choose loan officer</label>
+        <select id="lo">
+          <option value="jb" selected>John Bischof</option>
+          <option value="dw">Darrell Whitaker</option>
+          <option value="kb">Kristie Bruce</option>
+        </select></div>
       </div>
+      <button class="icon-btn" id="reset" aria-label="Start over" title="Start over"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
     </div>
+  </header>
 
-    <div id="creditScoreBlock">
-      <label>Estimated Credit Score</label>
-      <select id="creditScore" onchange="syncAndCalc()">
-        <option value="760">760+ (Excellent)</option>
-        <option value="720">720 - 759 (Very Good)</option>
-        <option value="700">700 - 719 (Good)</option>
-        <option value="680">680 - 699 (Good)</option>
-        <option value="660">660 - 679 (Fair)</option>
-        <option value="640">640 - 659 (Fair)</option>
-        <option value="620">620 - 639 (Subprime)</option>
-      </select>
-    </div>
+  <div class="grid">
+    <section class="inputs">
+      <div class="seg mode-seg" role="group" aria-label="What are you doing">
+        <button data-mode="buy" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Buy</button>
+        <button data-mode="refi" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-4"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.9 4"/><path d="M20 20v-4h-4"/></svg>Refi</button>
+        <button data-mode="afford" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18"/><path d="M16.5 7.5c-.8-1.2-2.4-2-4.5-2-2.5 0-4 1.3-4 3s1.5 2.6 4 3 4 1.4 4 3.2-1.6 3.3-4.2 3.3c-2.2 0-3.9-.9-4.6-2.3"/></svg><span class="long">What can I </span>Afford</button>
+      </div>
 
-    <div id="purchaseInputs">
-      <h2>Purchase Inputs</h2>
-      <label>Purchase Price ($)</label>
-      <input id="price" type="text" inputmode="decimal" value="400,000" oninput="onPriceTextChange(); syncAndCalc()" />
-      <input id="priceSlider" type="range" min="50000" max="1500000" step="5000" value="400000" oninput="onPriceSliderChange(); syncAndCalc()" />
+      <div class="seg small scen-tabs" role="group" aria-label="Scenario">
+        <button data-scen="A" aria-pressed="true">Editing Option A</button>
+        <button data-scen="B" aria-pressed="false">Editing Option B</button>
+      </div>
 
-      <div class="row">
-        <div>
-          <label>Down Payment ($)</label>
-          <input id="downCash" type="text" inputmode="decimal" value="40,000" oninput="onDownCashTextChange(); syncAndCalc()" />
+      <div class="panel" id="homePanel">
+        <h2 id="homeTitle">The home</h2>
+        <div class="field" id="fPrice">
+          <label for="price" id="priceLbl">Purchase price</label>
+          <div class="box"><span class="pre">$</span><input id="price" inputmode="numeric" data-money></div>
+          <input type="range" id="priceR" min="50000" max="1500000" step="5000" aria-label="Purchase price slider">
         </div>
-        <div>
-          <label>Down Payment %</label>
-          <input id="downPct" type="text" inputmode="decimal" value="10" oninput="onDownPctTextChange(); syncAndCalc()" />
+        <div id="fDown">
+          <div class="row2">
+            <div class="field"><label for="downAmt">Down payment</label><div class="box"><span class="pre">$</span><input id="downAmt" inputmode="numeric" data-money></div></div>
+            <div class="field"><label for="downPct">Percent</label><div class="box"><input id="downPct" inputmode="decimal"><span class="suf">%</span></div></div>
+          </div>
+          <input type="range" id="downR" min="0" max="50" step="0.5" aria-label="Down payment slider">
+        </div>
+        <div class="row2" id="fRefi" hidden>
+          <div class="field"><label for="refiLoan">Loan amount</label><div class="box"><span class="pre">$</span><input id="refiLoan" inputmode="numeric" data-money></div></div>
+          <div class="field"><span class="lbl">Loan-to-value</span><div class="box"><input id="refiLtv" readonly tabindex="-1"><span class="suf">%</span></div></div>
+        </div>
+        <div class="row2" id="fAfford" hidden>
+          <div class="field"><label for="target">Monthly budget</label><div class="box"><span class="pre">$</span><input id="target" inputmode="numeric" data-money></div></div>
+          <div class="field"><label for="tDown">Cash for down payment</label><div class="box"><span class="pre">$</span><input id="tDown" inputmode="numeric" data-money></div></div>
         </div>
       </div>
-      <input id="downPctSlider" type="range" min="0" max="50" step="0.5" value="10" oninput="onDownPctSliderChange(); syncAndCalc()" />
-    </div>
 
-    <div id="refiInputs" style="display:none;">
-      <h2>Refinance Inputs</h2>
-      <label>Home Value ($)</label>
-      <input id="homeValue" type="text" inputmode="decimal" value="400,000" oninput="onHomeValueChange(); syncAndCalc()" />
-      <input id="homeValueSlider" type="range" min="50000" max="1500000" step="5000" value="400000" oninput="syncSliderToText('homeValueSlider', 'homeValue'); onHomeValueChange(); syncAndCalc()" />
-
-      <label>Loan Amount ($)</label>
-      <input id="refiLoanAmt" type="text" inputmode="numeric" value="360,000" oninput="onRefiLoanChange(); syncAndCalc()" />
-      <input id="refiLoanSlider" type="range" min="30000" max="1400000" step="5000" value="360000" oninput="syncSliderToText('refiLoanSlider', 'refiLoanAmt'); onRefiLoanChange(); syncAndCalc()" />
-
-      <label>LTV %</label>
-      <input id="refiLtv" type="text" inputmode="decimal" value="90" oninput="onRefiLtvChange(); syncAndCalc()" />
-      <input id="refiLtvSlider" type="range" min="10" max="100" step="0.5" value="90" oninput="syncSliderToText('refiLtvSlider', 'refiLtv'); onRefiLtvChange(); syncAndCalc()" />
-    </div>
-
-    <div id="targetInputs" style="display:none;">
-      <h2>What Can I Afford? (Target Budget Mode)</h2>
-      <label>Target Maximum Monthly Payment ($)</label>
-      <input id="targetPiti" type="text" inputmode="decimal" value="2,500" oninput="syncTextToSlider('targetPiti', 'targetPitiSlider'); syncAndCalc()" />
-      <input id="targetPitiSlider" type="range" min="500" max="10000" step="50" value="2500" oninput="syncSliderToText('targetPitiSlider', 'targetPiti'); syncAndCalc()" />
-      
-      <label>Down Payment Cash Target ($)</label>
-      <input id="targetDownCash" type="text" inputmode="decimal" value="25,000" oninput="syncTextToSlider('targetDownCash', 'targetDownCashSlider'); syncAndCalc()" />
-      <input id="targetDownCashSlider" type="range" min="0" max="300000" step="1000" value="25000" oninput="syncSliderToText('targetDownCashSlider', 'targetDownCash'); syncAndCalc()" />
-    </div>
-
-    <h2>Loan Details</h2>
-    <div class="row">
-      <div>
-        <label>Interest Rate %</label>
-        <input id="rate" type="text" inputmode="decimal" value="6.5" oninput="syncTextToSlider('rate', 'rateSlider'); syncAndCalc()" />
-        <input id="rateSlider" type="range" min="2" max="12" step="0.125" value="6.5" oninput="syncSliderToText('rateSlider', 'rate'); syncAndCalc()" />
-        <div id="rateSource" style="color: var(--muted); font-size: 12px; margin-top: 4px;"></div>
-      </div>
-      <div>
-        <label>Loan Term (Years)</label>
-        <select id="term" onchange="syncAndCalc()">
-          <option value="30">30 Years</option>
-          <option value="20">20 Years</option>
-          <option value="15">15 Years</option>
-          <option value="10">10 Years</option>
-        </select>
-      </div>
-    </div>
-
-    <label>Loan Type</label>
-    <select id="loanType" onchange="onLoanTypeChange()">
-      <option value="Conventional">Conventional</option>
-      <option value="FHA">FHA</option>
-      <option value="VA">VA</option>
-      <option value="USDA">USDA</option>
-    </select>
-
-    <div id="vaStatusBlock" style="display:none;">
-      <label>VA Funding Fee Status</label>
-      <select id="vaStatus" onchange="syncAndCalc()">
-        <option value="first">First Time Use</option>
-        <option value="subsequent">Subsequent Use</option>
-        <option value="exempt">Exempt (VA Disability Drawn - 0%)</option>
-      </select>
-    </div>
-
-    <div id="manualMiBlock" style="display:none;">
-      <label>Mortgage Insurance Rate (% per Year, Optional)</label>
-      <input id="manualMi" type="text" inputmode="decimal" placeholder="Auto-calculated" oninput="syncAndCalc()" />
-      <div id="miHint" style="color: var(--muted); font-size: 12px; margin-top: 4px;">Leave blank to use the built-in estimate from credit score and down payment, or enter the rate from a real MI quote.</div>
-    </div>
-
-    <h2>Property Costs</h2>
-    <div class="row">
-      <div>
-        <label>Property Taxes ($/Year)</label>
-        <input id="taxes" type="text" inputmode="decimal" value="2,400" oninput="syncTextToSlider('taxes', 'taxesSlider'); syncAndCalc()" />
-        <input id="taxesSlider" type="range" min="0" max="12000" step="100" value="2400" oninput="syncSliderToText('taxesSlider', 'taxes'); syncAndCalc()" />
-      </div>
-      <div>
-        <label>Home Insurance ($/Year)</label>
-        <input id="ins" type="text" inputmode="decimal" value="1,500" oninput="syncTextToSlider('ins', 'insSlider'); syncAndCalc()" />
-        <input id="insSlider" type="range" min="0" max="6000" step="100" value="1500" oninput="syncSliderToText('insSlider', 'ins'); syncAndCalc()" />
-      </div>
-    </div>
-    <div>
-      <label>HOA Dues ($/Month)</label>
-      <input id="hoa" type="text" inputmode="decimal" value="0" oninput="syncTextToSlider('hoa', 'hoaSlider'); syncAndCalc()" />
-      <input id="hoaSlider" type="range" min="0" max="1500" step="5" value="0" oninput="syncSliderToText('hoaSlider', 'hoa'); syncAndCalc()" />
-    </div>
-
-    <button onclick="scrollToResults()">Review calculations below</button>
-
-    <div class="card" id="results">
-      <img src="email-logo.png" style="width:100%; max-width:200px; display:block; margin:0 auto 12px; border-radius: 4px;" alt="Home Mortgage Solutions Logo" />
-      <h3 id="cardHeaderTitle" style="text-align:center; margin-bottom:12px; font-size:1.1rem; color:#fff;">Payment Breakdown Estimate</h3>
-
-      <div id="standardOutputViews">
-        <div class="chart-container">
-          <div id="donutRing" class="donut-ring">
-            <canvas id="donutCanvas" width="420" height="420" aria-hidden="true"></canvas>
-            <div class="donut-hole">
-              <span id="donutCenterLabel">Total PITI</span>
-              <span id="donutTotalText" class="donut-total">$0.00</span>
-            </div>
+      <div class="panel">
+        <h2>The loan</h2>
+        <div class="field">
+          <span class="lbl">Loan type</span>
+          <div class="seg" role="group" aria-label="Loan type" id="typeSeg">
+            <button data-type="Conventional" aria-pressed="true">Conv</button>
+            <button data-type="FHA" aria-pressed="false">FHA</button>
+            <button data-type="VA" aria-pressed="false">VA</button>
+            <button data-type="USDA" aria-pressed="false">USDA</button>
           </div>
         </div>
-
-        <div class="legend-grid">
-          <div class="legend-item"><span class="dot" style="background:var(--accent);"></span>P&I</div>
-          <div class="legend-item"><span class="dot" style="background:#4ae290;"></span>Monthly MI</div>
-          <div class="legend-item"><span class="dot" style="background:#e2be4a;"></span>Taxes</div>
-          <div class="legend-item"><span class="dot" style="background:#e24a4a;"></span>Insurance</div>
-          <div class="legend-item"><span class="dot" style="background:#b07ae2;"></span>HOA</div>
+        <div class="field">
+          <label for="rate">Interest rate <span class="avg" id="avgNote"></span></label>
+          <div class="stepper"><button id="rateDn" aria-label="Lower rate by one eighth">−</button><div class="box"><input id="rate" inputmode="decimal"><span class="suf">%</span></div><button id="rateUp" aria-label="Raise rate by one eighth">+</button></div>
         </div>
-
-        <div class="line"><span>Credit Score Target</span><span id="creditScoreOut">-</span></div>
-        <div class="line"><span id="valueLabel">Purchase Price</span><span id="valueOut">$0.00</span></div>
-        <div class="line"><span>Loan Type</span><span id="loanTypeOut">-</span></div>
-        <div class="line"><span>Loan-to-Value (LTV)</span><span id="ltvOut">0.00%</span></div>
-        <div class="line"><span>Base Loan Amount</span><span id="loanBaseOut">$0.00</span></div>
-        <div class="line"><span>Upfront Fee Financed</span><span id="ufmipOut">$0.00</span></div>
-        <div class="line"><span>Total Loan Amount</span><span id="loanAmtOut">$0.00</span></div>
-
-        <hr style="border:0;border-top:1px solid var(--border);margin:12px 0;">
-        
-        <div class="line"><span>P&I Payment</span><span id="piOut">$0.00</span></div>
-        <div class="line"><span>Monthly MI</span><span id="miOut">$0.00</span></div>
-        <div class="line"><span>Monthly Taxes</span><span id="taxMoOut">$0.00</span></div>
-        <div class="line"><span>Monthly Insurance</span><span id="insMoOut">$0.00</span></div>
-        <div class="line"><span>Monthly HOA</span><span id="hoaMoOut">$0.00</span></div>
-
-        <hr style="border:0;border-top:1px solid var(--border);margin:12px 0;">
-
-        <div class="line big">
-          <span id="totalLabelText">Total Monthly Payment</span>
-          <span id="pitiOut" style="color:#fff;">$0.00</span>
+        <div class="row2">
+          <div class="field">
+            <span class="lbl">Term (years)</span>
+            <div class="seg" role="group" aria-label="Term in years" id="termSeg">
+              <button data-term="30" aria-pressed="true">30</button>
+              <button data-term="20" aria-pressed="false">20</button>
+              <button data-term="15" aria-pressed="false">15</button>
+            </div>
+          </div>
+          <div class="field" id="fCredit"><label for="credit">Credit score</label>
+            <div class="box"><select id="credit">
+              <option value="760">760+</option><option value="720">720–759</option><option value="700">700–719</option>
+              <option value="680">680–699</option><option value="660">660–679</option><option value="640">640–659</option><option value="620">620–639</option>
+            </select></div></div>
+          <div class="field" id="fVa" hidden><label for="vaUse">VA funding fee</label>
+            <div class="box"><select id="vaUse"><option value="first">First use</option><option value="sub">Subsequent use</option><option value="exempt">Exempt</option></select></div></div>
         </div>
       </div>
 
-      <div id="sideBySideMatrixView" style="display:none; margin-top:10px;">
-        <table class="comp-table">
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>Scenario A</th>
-              <th>Scenario B</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>Credit Score</td><td id="tdScoreA">-</td><td id="tdScoreB">-</td></tr>
-            <tr><td>Mode</td><td id="tdModeA">-</td><td id="tdModeB">-</td></tr>
-            <tr><td>Property Size / Value</td><td id="tdValA">-</td><td id="tdValB">-</td></tr>
-            <tr><td>Program</td><td id="tdProgA">-</td><td id="tdProgB">-</td></tr>
-            <tr><td>Interest Rate</td><td id="tdRateA">-</td><td id="tdRateB">-</td></tr>
-            <tr><td>Total Financing</td><td id="tdLoanA">-</td><td id="tdLoanB">-</td></tr>
-            <tr><td>P&I Payment</td><td id="tdPiA">-</td><td id="tdPiB">-</td></tr>
-            <tr><td>Monthly MI</td><td id="tdMiA">-</td><td id="tdMiB">-</td></tr>
-            <tr><td>Escrows (Tax/Ins)</td><td id="tdEscrowA">-</td><td id="tdEscrowB">-</td></tr>
-            <tr><td>Monthly HOA</td><td id="tdHoaA">-</td><td id="tdHoaB">-</td></tr>
-            <tr class="comp-highlight"><td>Total PITI</td><td id="tdPitiA">-</td><td id="tdPitiB">-</td></tr>
-          </tbody>
-        </table>
+      <details class="costs" id="costs">
+        <summary><b>Taxes, insurance &amp; HOA</b><span class="sum num" id="costSum"></span><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+        <div class="inner">
+          <div class="row2">
+            <div class="field"><label for="tax">Property taxes</label><div class="box"><span class="pre">$</span><input id="tax" inputmode="numeric" data-money><span class="suf">/yr</span></div></div>
+            <div class="field"><label for="ins">Home insurance</label><div class="box"><span class="pre">$</span><input id="ins" inputmode="numeric" data-money><span class="suf">/yr</span></div></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label for="hoa">HOA dues</label><div class="box"><span class="pre">$</span><input id="hoa" inputmode="numeric" data-money><span class="suf">/mo</span></div></div>
+            <div class="field" id="fMi"><label for="mi">MI rate (optional)</label><div class="box"><input id="mi" inputmode="decimal"><span class="suf">%/yr</span></div><span class="hint">Blank uses the estimate. Type a real quote to override.</span></div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <aside class="results" id="results">
+      <div class="seg small" role="group" aria-label="View">
+        <button data-view="single" aria-pressed="true">One option</button>
+        <button data-view="compare" aria-pressed="false">Compare two</button>
       </div>
 
-      <div class="muted" style="color: var(--muted); border-top: 1px solid var(--border); padding-top: 12px; margin-top: 16px;">
-        Home Mortgage Solutions, LLC • Quick Quote Estimate
+      <div class="card" id="cmpCard" hidden>
+        <div class="cmp" id="cmp"></div>
+        <div class="diff" id="diff"></div>
       </div>
-    </div>
 
-    <div class="action-grid">
-      <button id="saveShotBtn" style="background: #002240; border-color: var(--border);" onclick="saveScreenshot()">
-        Share Image
-      </button>
-      <button id="toggleCompBtn" style="background: #5c3b00; border-color: #8f5d00;" onclick="toggleComparisonDisplay()">
-        Compare Side-by-Side
-      </button>
-      <button id="copyTxtBtn" style="background: #115330; border-color: #1a7343;" onclick="copyTextSummary()">
-        Copy Text
-      </button>
-    </div>
+      <div class="card">
+        <div class="pay-k" id="payK">Est. monthly payment</div>
+        <div class="pay-v num" id="payV"></div>
+        <div class="pay-sub num" id="paySub"></div>
+        <div class="stack" id="ring" aria-hidden="true"></div>
+        <div class="rows" id="rows"></div>
+        <div class="facts" id="facts"></div>
+        <p class="disc">Estimate only, not a commitment to lend. Your actual rate, payment and mortgage insurance depend on your credit, the property and final loan approval. Taxes and insurance are estimates.</p>
+      </div>
 
-    <h2>Connect With a Loan Officer</h2>
-    <div class="action-grid">
-      <button style="background: #005a9c; border-color: #fff; font-weight: bold;" onclick="openContactModal('John Bischof', '4235059811')">
-        Text John Bischof
-      </button>
-      <button style="background: #005a9c; border-color: #fff; font-weight: bold;" onclick="openContactModal('Darrell Whitaker', '4235051376')">
-        Text Darrell Whitaker
-      </button>
-    </div>
+      <div class="actions">
+        <button class="btn primary" id="share">Share quote</button>
+        <button class="btn" id="copy">Copy as text</button>
+        <button class="btn" id="cmpBtn">Compare two</button>
+      </div>
+
+      <div class="card contact">
+        <span class="av" id="cInit">JB</span>
+        <div class="who"><b id="cName">John Bischof</b><span id="cPhone">(423) 505-9811</span></div>
+        <div class="cbtns"><button class="btn primary" id="cText">Text</button><a class="btn" id="cCall" href="#">Call</a></div>
+      </div>
+      <p class="disc" style="text-align:center;margin:0">Home Mortgage Solutions, LLC · NMLS #168687<br>31 Mouse Creek Road NW, Cleveland, TN 37312</p>
+    </aside>
   </div>
+</div>
 
-  <div id="previewOverlay" style="position: fixed; inset: 0; background: rgba(0,34,64,0.85); display: none; justify-content: center; align-items: center; z-index: 99999; padding: 20px;">
-    <div style="background: #00335c; padding: 20px; border-radius: 12px; width: 94%; max-width: 420px; text-align: center; border: 1px solid var(--border);">
-      <div id="pressMessage" style="background: var(--accent); color: #fff; padding: 10px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 700; margin-bottom: 16px; animation: pulseGlow 1.8s ease-in-out infinite;">
-        Long‑press image to save or share!
-      </div>
-      <img id="previewImage" style="width: 100%; border-radius: 8px;" alt="Preview"/>
-    </div>
+<div class="paybar" id="paybar">
+  <div><div class="v num" id="barV"></div><div class="s num" id="barS"></div></div>
+  <button class="btn" id="barBtn">Breakdown</button>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet">
+    <div class="field"><label for="addr" style="color:#e8eef6">Property or listing (optional, shows at the top of the card)</label><div class="box" style="background:#fff;color:#10243a"><input id="addr" placeholder="123 Oak St, Cleveland" style="font-size:16px"></div></div>
+    <div class="quote" id="quote"></div>
+    <img id="quoteImg" alt="Payment estimate picture" hidden>
+    <div class="bar"><button class="btn primary" id="qImg" style="grid-column:auto">Share picture</button><button class="btn" id="qCopy">Copy as text</button></div>
+    <button class="btn" id="qClose">Done</button>
+    <div class="note" id="qNote">Share picture makes an image of this card to text or email.</div>
   </div>
+</div>
 
-  <div id="contactModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3 id="modalTitle">Contact Officer</h3>
-      <p style="font-size: 0.8rem; color: var(--muted); text-align: center; margin-top:-6px; margin-bottom:16px;">
-        Enter your details to instantly format your quote and text it over.
-      </p>
-      
-      <label>Your Full Name</label>
-      <input id="clientName" type="text" placeholder="John Doe" />
+<div class="overlay" id="textOverlay" hidden>
+  <form class="sheet card" id="textForm">
+    <b id="textTitle" style="font-family:var(--f-display);font-size:18px">Text your loan officer</b>
+    <span class="hint">Add your contact info. Your phone will open a text with it and this quote.</span>
+    <div class="field"><label for="tName">Your name</label><div class="box"><input id="tName" autocomplete="name" required></div></div>
+    <div class="field"><label for="tPhone">Your phone</label><div class="box"><input id="tPhone" type="tel" autocomplete="tel" required></div></div>
+    <div class="field"><label for="tEmail">Your email (optional)</label><div class="box"><input id="tEmail" type="email" autocomplete="email"></div></div>
+    <div class="bar"><button type="button" class="btn" id="tCancel">Cancel</button><button type="submit" class="btn primary" style="grid-column:auto">Open text message</button></div>
+  </form>
+</div>
 
-      <label>Your Phone Number</label>
-      <input id="clientPhone" type="tel" placeholder="(423) 555-0123" />
-
-      <label>Your Email Address</label>
-      <input id="clientEmail" type="email" placeholder="name@example.com" />
-
-      <div class="row" style="margin-top:14px;">
-        <button style="background:transparent; border-color:var(--border); color:var(--muted);" onclick="closeContactModal()">
-          Cancel
-        </button>
-        <button style="background:#115330; border-color:#1a7343;" onclick="executeSmsRedirect()">
-          Send Text
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-let mode = "purchase";
-let isSyncing = false;
-let currentScenarioSlot = "A";
-let viewingComparison = false;
-
-let activeTargetOfficerName = "";
-let activeTargetOfficerPhone = "";
-
-let calculatedOutputs = {
-  A: null,
-  B: null
+// Same people and NMLS numbers as the pre-approval letter app.
+const LOS = {
+  jb: { name: "John Bischof", init: "JB", phone: "(423) 505-9811", email: "john@hmsloan.com", sms: "4235059811", tel: "4235059811", title: "Senior Mortgage Lender", nmls: "NMLS #165831" },
+  dw: { name: "Darrell Whitaker", init: "DW", phone: "(423) 505-1376", email: "darrell@hmsloan.com", sms: "4235051376", tel: "4235051376", title: "Owner", nmls: "NMLS #168727" },
+  kb: { name: "Kristie Bruce", init: "KB", phone: "(423) 339-8086 ext. 4", email: "processor@hmsloan.com", sms: "", tel: "4233398086,4", title: "Mortgage Lending Specialist", nmls: "NMLS #163760" }
 };
-
-let scenarios = {
-  A: { mode: "purchase", price: "400,000", downCash: "40,000", downPct: "10", homeValue: "400,000", refiLoanAmt: "360,000", refiLtv: "90", rate: "6.5", term: "30", loanType: "Conventional", creditScore: "760", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", hoa: "0", targetPiti: "2,500", targetDownCash: "25,000" },
-  B: { mode: "purchase", price: "400,000", downCash: "14,000", downPct: "3.5", homeValue: "400,000", refiLoanAmt: "386,000", refiLtv: "96.5", rate: "6.25", term: "30", loanType: "FHA", creditScore: "720", vaStatus: "first", manualMi: "", taxes: "2,400", ins: "1,500", hoa: "0", targetPiti: "2,500", targetDownCash: "25,000" }
+let BASE_RATE = 6.5; // replaced by the national average (rounded down to the eighth) once it loads
+let AVG = null;     // { rate, date } of the latest Freddie Mac 30-year average
+const PMI = { // mortgage-info.com 2026 chart: [5% down, 10% down, 15% down]
+  "760": [.0028, .0016, .0010], "720": [.0036, .0025, .0016], "700": [.0054, .0037, .0025],
+  "680": [.0078, .0056, .0037], "660": [.0102, .0078, .0054], "640": [.0138, .0108, .0078], "620": [.0186, .0150, .0110]
 };
+const fresh = () => ({
+  A: { type: "Conventional", price: 400000, downPct: 10, rate: BASE_RATE, term: 30, credit: "760", va: "first", tax: 1400, ins: 1400, hoa: 0, mi: "", refiLoan: 360000, target: 2500, tDown: 25000 },
+  B: { type: "FHA", price: 400000, downPct: 3.5, rate: BASE_RATE - .25, term: 30, credit: "720", va: "first", tax: 1400, ins: 1400, hoa: 0, mi: "", refiLoan: 386000, target: 2500, tDown: 14000 }
+});
+let S = fresh(), mode = "buy", active = "A", view = "single", lo = "jb";
+const $ = id => document.getElementById(id);
+const money = n => "$" + Math.round(n).toLocaleString("en-US");
+const money2 = n => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const parse = v => parseFloat(String(v).replace(/[^0-9.]/g, "")) || 0;
 
-// Conventional PMI, annual rate by credit score and LTV, from the
-// mortgage-info.com "PMI Rates by Credit Score 2026" chart (updated Sept 1, 2026).
-// over90 = 5% down chart (90.01-95% LTV), over85 = 10% down chart (85.01-90%),
-// over80 = 15% down chart (80.01-85%). The chart has no 3% down column, so
-// over95 (95.01-97% LTV) uses the 5% down rate.
-// A real MI quote typed into the override box always wins.
-const pmiMatrix = {
-  "760": { over95: 0.0028, over90: 0.0028, over85: 0.0016, over80: 0.0010 },
-  "720": { over95: 0.0036, over90: 0.0036, over85: 0.0025, over80: 0.0016 },
-  "700": { over95: 0.0054, over90: 0.0054, over85: 0.0037, over80: 0.0025 },
-  "680": { over95: 0.0078, over90: 0.0078, over85: 0.0056, over80: 0.0037 },
-  "660": { over95: 0.0102, over90: 0.0102, over85: 0.0078, over80: 0.0054 },
-  "640": { over95: 0.0138, over90: 0.0138, over85: 0.0108, over80: 0.0078 },
-  "620": { over95: 0.0186, over90: 0.0186, over85: 0.0150, over80: 0.0110 }
+function core(s, price, baseLoan) {
+  const ltv = price > 0 ? baseLoan / price * 100 : 0, dp = 100 - ltv;
+  let fee = 0;
+  if (s.type === "FHA") fee = .0175;
+  if (s.type === "USDA") fee = .01;
+  if (s.type === "VA" && s.va !== "exempt") fee = dp >= 10 ? .0125 : dp >= 5 ? .015 : (s.va === "first" ? .0215 : .033);
+  const loan = baseLoan * (1 + fee);
+  let mi = 0, miAuto = 0;
+  if (s.type === "Conventional" && ltv > 80) {
+    const row = PMI[s.credit];
+    miAuto = ltv > 90 ? row[0] : ltv > 85 ? row[1] : row[2];
+    mi = s.mi !== "" && !isNaN(parseFloat(s.mi)) ? parseFloat(s.mi) / 100 : miAuto;
+  }
+  if (s.type === "FHA") mi = dp >= 5 ? .005 : .0055;
+  if (s.type === "USDA") mi = .0035;
+  const r = s.rate / 100 / 12, n = s.term * 12;
+  const pi = r > 0 ? loan * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1) : loan / n;
+  const parts = { pi, mi: loan * mi / 12, tax: s.tax / 12, ins: s.ins / 12, hoa: s.hoa };
+  const total = parts.pi + parts.mi + parts.tax + parts.ins + parts.hoa;
+  return { price, baseLoan, loan, ltv, fee: baseLoan * fee, parts, total, miAuto, miRate: mi };
+}
+function calc(s) {
+  if (mode === "refi") return core(s, s.price, s.refiLoan);
+  if (mode === "afford") {
+    let lo = 0, hi = 5e6;
+    for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; core(s, mid + s.tDown, mid).total <= s.target ? lo = mid : hi = mid; }
+    return core(s, lo + s.tDown, lo);
+  }
+  return core(s, s.price, s.price * (1 - s.downPct / 100));
+}
+
+// One bar split by share of the payment; the rows below carry the amounts.
+function ring(parts) {
+  const order = [["pi", "--c-pi-soft"], ["mi", "--c-mi"], ["tax", "--c-tax"], ["ins", "--c-ins"], ["hoa", "--c-hoa"]];
+  $("ring").innerHTML = order.filter(([k]) => parts[k] > .5)
+    .map(([k, c]) => `<span style="flex:${parts[k]} 1 0;background:var(${c})"></span>`).join("");
+}
+const LABELS = { pi: ["Loan payment (P&I)", "--c-pi-soft"], mi: ["Mortgage insurance", "--c-mi"], tax: ["Property taxes", "--c-tax"], ins: ["Home insurance", "--c-ins"], hoa: ["HOA dues", "--c-hoa"] };
+
+function fill() {
+  const s = S[active];
+  const setV = (id, v) => { if (document.activeElement !== $(id)) $(id).value = v; };
+  setV("price", Math.round(s.price).toLocaleString("en-US"));
+  $("priceR").value = s.price;
+  setV("downPct", +s.downPct.toFixed(2));
+  setV("downAmt", Math.round(s.price * s.downPct / 100).toLocaleString("en-US"));
+  $("downR").value = s.downPct;
+  setV("refiLoan", Math.round(s.refiLoan).toLocaleString("en-US"));
+  setV("target", Math.round(s.target).toLocaleString("en-US"));
+  setV("tDown", Math.round(s.tDown).toLocaleString("en-US"));
+  setV("rate", s.rate);
+  $("credit").value = s.credit; $("vaUse").value = s.va;
+  setV("tax", Math.round(s.tax).toLocaleString("en-US")); setV("ins", Math.round(s.ins).toLocaleString("en-US")); setV("hoa", Math.round(s.hoa).toLocaleString("en-US")); setV("mi", s.mi);
+  document.querySelectorAll("#typeSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.type === s.type));
+  document.querySelectorAll("#termSeg button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.term === s.term));
+}
+
+function render() {
+  const s = S[active], c = calc(s);
+  $("fDown").hidden = mode !== "buy"; $("fRefi").hidden = mode !== "refi"; $("fAfford").hidden = mode !== "afford";
+  $("fPrice").hidden = mode === "afford";
+  $("priceLbl").textContent = mode === "refi" ? "Home value" : "Purchase price";
+  $("homeTitle").textContent = mode === "refi" ? "The home and current loan" : mode === "afford" ? "Your budget" : "The home";
+  $("refiLtv").value = c.ltv.toFixed(1);
+  $("fCredit").hidden = s.type !== "Conventional"; $("fMi").hidden = s.type !== "Conventional"; $("fVa").hidden = s.type !== "VA";
+  $("mi").placeholder = c.miAuto ? "Auto " + (c.miAuto * 100).toFixed(2) : c.ltv > 80 ? "" : "Not needed";
+  $("costSum").textContent = money(c.parts.tax + c.parts.ins + c.parts.hoa) + "/mo";
+
+  ring(c.parts);
+  if (mode === "afford") {
+    $("payK").textContent = "You could look at homes up to";
+    $("payV").innerHTML = money(c.price);
+    $("paySub").textContent = "at " + money(s.target) + "/mo with " + money(s.tDown) + " down";
+  } else {
+    $("payK").textContent = "Est. monthly payment";
+    $("payV").innerHTML = money(c.total) + "<small>/mo</small>";
+    $("paySub").textContent = s.type + " · " + s.rate + "% · " + s.term + " yr";
+  }
+  $("rows").innerHTML = Object.entries(c.parts).filter(([, v]) => v > 0.5)
+    .map(([k, v]) => `<div class="r"><span class="sw" style="background:var(${LABELS[k][1]})"></span><span>${LABELS[k][0]}</span><span>${money(v)}</span></div>`).join("");
+  const feeNote = c.fee > 0 ? "incl. " + money(c.fee) + " fee" : "";
+  const facts = [["Loan", money(c.loan), feeNote], ["LTV", c.ltv.toFixed(1) + "%"]];
+  if (mode !== "refi") facts.push(["Down", money(c.price - c.baseLoan)]);
+  $("facts").innerHTML = facts.map(([k, v, n]) => `<div class="fact"><div class="k">${k}</div><div class="v">${v}</div>${n ? `<div class="n">${n}</div>` : ""}</div>`).join("");
+
+  $("barV").textContent = mode === "afford" ? "Up to " + money(c.price) : money(c.total) + "/mo";
+  $("barS").textContent = mode === "afford" ? "Max price at your budget" : "P&I " + money(c.parts.pi) + " · Taxes & ins " + money(c.parts.tax + c.parts.ins);
+
+  const cmp = view === "compare";
+  $("app").classList.toggle("comparing", cmp);
+  $("cmpCard").hidden = !cmp;
+  $("cmpBtn").textContent = cmp ? "Back to one option" : "Compare two";
+  if (cmp) {
+    const a = calc(S.A), b = calc(S.B), key = mode === "afford" ? "price" : "total";
+    const col = (k, x) => `<button class="col ${active === k ? "active" : ""}" data-pick="${k}"><div class="tag">Option ${k} · ${S[k].type}</div><div class="big num">${mode === "afford" ? money(x.price) : money(x.total)}</div><div class="mini num">${S[k].rate}% · ${mode === "refi" ? "" : money(x.price - x.baseLoan) + " down"}</div></button>`;
+    $("cmp").innerHTML = col("A", a) + col("B", b);
+    const dPay = b[key] - a[key], dDown = (b.price - b.baseLoan) - (a.price - a.baseLoan);
+    let txt;
+    if (mode === "afford") txt = `Option ${dPay >= 0 ? "B" : "A"} buys ${money(Math.abs(dPay))} more house on the same budget.`;
+    else {
+      txt = `Option B is <b>${money(Math.abs(dPay))}/mo ${dPay >= 0 ? "more" : "less"}</b>`;
+      if (mode === "buy" && Math.abs(dDown) >= 1) txt += ` and needs <b>${money(Math.abs(dDown))} ${dDown < 0 ? "less" : "more"} down</b>`;
+      txt += " than Option A.";
+    }
+    $("diff").innerHTML = txt;
+    document.querySelectorAll("[data-pick]").forEach(btn => btn.onclick = () => { active = btn.dataset.pick; sync(); });
+  }
+  document.querySelectorAll("[data-scen]").forEach(b => b.setAttribute("aria-pressed", b.dataset.scen === active));
+  document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view));
+  document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
+  const L = LOS[lo];
+  $("loInit").textContent = $("cInit").textContent = L ? L.init : "?";
+  $("cName").textContent = L ? L.name : "Choose your loan officer";
+  $("cPhone").textContent = L ? L.phone + " · " + L.nmls : "Pick who you're working with from the menu at the top.";
+  $("avgNote").textContent = AVG ? `Natl avg ${AVG.rate.toFixed(2)}% · ${AVG.date}` : "";
+  $("cText").hidden = !L || !L.sms;
+  $("cCall").hidden = !L;
+  if (L) $("cCall").href = "tel:" + L.tel;
+  document.querySelector(".lo-chip").classList.toggle("unset", !L);
+}
+function sync() { fill(); render(); }
+
+// Inputs
+const bindNum = (id, key, fn) => $(id).addEventListener("input", e => { S[active][key] = fn ? fn(e.target.value) : parse(e.target.value); render(); fillExcept(id); });
+function fillExcept(id) { const keep = document.activeElement; fill(); if (keep) keep.focus(); }
+bindNum("price", "price"); bindNum("refiLoan", "refiLoan"); bindNum("target", "target"); bindNum("tDown", "tDown");
+bindNum("ins", "ins"); bindNum("hoa", "hoa"); bindNum("tax", "tax"); bindNum("rate", "rate");
+bindNum("mi", "mi", v => v.trim());
+$("priceR").addEventListener("input", e => { S[active].price = +e.target.value; sync(); });
+$("downPct").addEventListener("input", e => { S[active].downPct = Math.min(100, parse(e.target.value)); render(); fillExcept("downPct"); });
+$("downAmt").addEventListener("input", e => { const s = S[active]; s.downPct = s.price ? Math.min(100, parse(e.target.value) / s.price * 100) : 0; render(); fillExcept("downAmt"); });
+$("downR").addEventListener("input", e => { S[active].downPct = +e.target.value; sync(); });
+document.querySelectorAll("[data-money]").forEach(el => el.addEventListener("blur", () => { el.value = Math.round(parse(el.value)).toLocaleString("en-US"); }));
+// Tapping into a box selects its whole value, so typing replaces it.
+document.querySelectorAll(".box input:not([readonly])").forEach(el => {
+  // Re-select only while nothing has been typed yet, so fast typing is never wiped.
+  const selectAll = () => { if (el.value !== el._focusVal) return; try { el.setSelectionRange(0, el.value.length); } catch (e) { el.select(); } };
+  el.addEventListener("focus", () => { el._focusVal = el.value; el._justFocused = true; selectAll(); setTimeout(selectAll, 0); });
+  el.addEventListener("mouseup", e => { if (el._justFocused) { e.preventDefault(); el._justFocused = false; } });
+  el.addEventListener("touchend", () => { if (el._justFocused) setTimeout(selectAll, 0); el._justFocused = false; });
+  el.addEventListener("blur", () => { el._justFocused = false; });
+});
+$("rateUp").onclick = () => { S[active].rate = +(S[active].rate + .125).toFixed(3); sync(); };
+$("rateDn").onclick = () => { S[active].rate = Math.max(0, +(S[active].rate - .125).toFixed(3)); sync(); };
+$("credit").onchange = e => { S[active].credit = e.target.value; render(); };
+$("vaUse").onchange = e => { S[active].va = e.target.value; render(); };
+document.querySelectorAll("#typeSeg button").forEach(b => b.onclick = () => {
+  const s = S[active], was = s.type, now = b.dataset.type;
+  const auto = r => r === BASE_RATE || r === BASE_RATE - .25;
+  if (auto(s.rate)) s.rate = now === "Conventional" ? BASE_RATE : BASE_RATE - .25;
+  if (now === "FHA" && s.downPct < 3.5) s.downPct = 3.5;
+  if (now === "Conventional" && s.downPct < 3) s.downPct = 3;
+  s.type = now; sync();
+});
+document.querySelectorAll("#termSeg button").forEach(b => b.onclick = () => { S[active].term = +b.dataset.term; sync(); });
+document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { mode = b.dataset.mode; sync(); });
+document.querySelectorAll("[data-scen]").forEach(b => b.onclick = () => { active = b.dataset.scen; sync(); });
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => { view = b.dataset.view; if (view === "single") active = "A"; sync(); });
+$("cmpBtn").onclick = () => { view = view === "compare" ? "single" : "compare"; if (view === "single") active = "A"; sync(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+$("lo").onchange = e => { lo = e.target.value; render(); };
+$("reset").onclick = () => { S = fresh(); mode = "buy"; active = "A"; view = "single"; $("costs").open = false; sync(); };
+$("barBtn").onclick = () => $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+
+// Copy and share
+function summary() {
+  const s = S[active], c = calc(s), L = LOS[lo], addr = $("addr").value.trim();
+  const kind = mode === "refi" ? "refinance estimate" : mode === "afford" ? "buying power estimate" : "purchase estimate";
+  const lines = [(addr ? addr + " · " : "") + "Home Mortgage Solutions " + kind];
+  lines.push(mode === "afford" ? "Max purchase price: " + money(c.price) : (mode === "refi" ? "New monthly payment: " : "Est. monthly payment: ") + money2(c.total));
+  if (mode === "refi") lines.push(`Home value ${money(c.price)} · Loan ${money(c.loan)}`);
+  lines.push(`${s.type} · ${s.rate}% · ${s.term}-year fixed · ${money(c.loan)} loan`);
+  if (AVG) lines.push(`National average 30-yr fixed: ${AVG.rate.toFixed(2)}% (Freddie Mac, ${AVG.date})`);
+  for (const [k, v] of Object.entries(c.parts)) if (v > .5) lines.push(`• ${LABELS[k][0]}: ${money(v)}`);
+  if (L) lines.push(`Questions? ${L.name}, ${L.nmls}, ${L.phone}, ${L.email}`);
+  lines.push("Estimate only, not a commitment to lend. Home Mortgage Solutions, LLC · NMLS #168687 · 31 Mouse Creek Road NW, Cleveland, TN 37312 · Equal Housing Opportunity.");
+  return lines.join("\n");
+}
+async function copyText(btn) {
+  const old = btn.textContent;
+  try { await navigator.clipboard.writeText(summary()); btn.textContent = "Copied"; }
+  catch (e) { btn.textContent = "Copy not allowed here"; }
+  setTimeout(() => btn.textContent = old, 1600);
+}
+$("copy").onclick = e => copyText(e.currentTarget);
+$("qCopy").onclick = e => copyText(e.currentTarget);
+// Text the loan officer: the customer adds their contact info and the quote,
+// and their phone's messaging app opens with it filled in.
+$("cText").onclick = () => { $("textTitle").textContent = "Text " + LOS[lo].name; $("textOverlay").hidden = false; $("tName").focus(); };
+$("tCancel").onclick = () => $("textOverlay").hidden = true;
+$("textOverlay").onclick = e => { if (e.target.id === "textOverlay") $("textOverlay").hidden = true; };
+$("textForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const L = LOS[lo];
+  const body = `Online mortgage calculator customer is reaching out.\n\nName: ${$("tName").value.trim()}\nPhone: ${$("tPhone").value.trim()}\nEmail: ${$("tEmail").value.trim() || "Not provided"}\n\n${summary()}`;
+  $("textOverlay").hidden = true;
+  window.location.href = `sms:${L.sms}?body=${encodeURIComponent(body)}`;
+});
+function quote() {
+  const s = S[active], c = calc(s), L = LOS[lo], addr = $("addr").value.trim();
+  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const rows = Object.entries(c.parts).filter(([, v]) => v > .5).map(([k, v]) => `<div class="ql"><span>${LABELS[k][0]}</span><span>${money(v)}</span></div>`).join("");
+  const kind = mode === "refi" ? "Refinance estimate" : mode === "afford" ? "Buying power estimate" : "Purchase estimate";
+  const head = addr ? addr.replace(/</g, "&lt;") : "";
+  const bigLbl = mode === "refi" ? "New monthly payment" : mode === "afford" ? "Max purchase price" : "Est. monthly payment";
+  const detail = mode === "refi" ? `${s.type} · ${s.rate}% · ${s.term}-yr fixed · ${money(c.loan)} loan · ${money(c.price)} home value`
+    : mode === "afford" ? `${s.type} · ${s.rate}% · ${s.term}-yr fixed · ${money(s.target)}/mo budget · ${money(s.tDown)} down`
+    : `${s.type} · ${s.rate}% · ${s.term}-yr fixed · ${money(c.price - c.baseLoan)} down`;
+  $("quote").innerHTML = `<div class="qh"><img alt="Home Mortgage Solutions" src="${document.querySelector(".logo").src}"><div>${kind}<br>${today}</div></div>
+    <div class="qb">${head ? `<div class="addr">${head}</div>` : ""}
+    <div class="qk">${bigLbl}</div>
+    <div class="qv num">${mode === "afford" ? money(c.price) : money(c.total) + "<small> /mo</small>"}</div>
+    <div style="font-size:13px;color:#586b82">${detail}</div>
+    ${AVG ? `<div style="font-size:12px;color:#586b82;margin:2px 0 10px">National avg 30-yr fixed ${AVG.rate.toFixed(2)}% (Freddie Mac, ${AVG.date})</div>` : `<div style="height:10px"></div>`}
+    ${rows}
+    ${L ? `<div class="qlo"><span class="av">${L.init}</span><div><b>${L.name}</b> · ${L.title}<br>${L.nmls} · ${L.phone}<br>${L.email}</div></div>` : ""}</div>
+    <div class="qf">Estimate only, not a commitment to lend. Rate, payment and mortgage insurance depend on credit, property and final underwriting. Home Mortgage Solutions, LLC · NMLS #168687 · 31 Mouse Creek Road NW, Cleveland, TN 37312 · Equal Housing Opportunity.</div>`;
+}
+function showCard() { quote(); $("quoteImg").hidden = true; $("quote").hidden = false; $("qNote").textContent = "Share picture makes an image of this card to text or email."; }
+$("share").onclick = () => { showCard(); $("overlay").hidden = false; };
+$("addr").addEventListener("input", showCard);
+// Turn the card into a PNG. Where the phone allows it, open the share sheet with the picture;
+// otherwise show the picture so it can be pressed and held to save or send.
+$("qImg").onclick = async () => {
+  const btn = $("qImg"); btn.disabled = true; btn.textContent = "Making picture…";
+  try {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const canvas = await html2canvas($("quote"), { scale: 2, backgroundColor: null });
+    const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+    const file = new File([blob], "HMS-payment-estimate.png", { type: "image/png" });
+    let shared = false;
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Payment estimate" }); shared = true; }
+      catch (e) { shared = e.name === "AbortError"; }
+    }
+    if (!shared) {
+      $("quoteImg").src = canvas.toDataURL("image/png");
+      $("quoteImg").hidden = false; $("quote").hidden = true;
+      $("qNote").textContent = "Press and hold the picture to save it or send it in a text.";
+    }
+  } catch (e) {
+    $("qNote").textContent = "Couldn't make the picture here. Use Copy as text instead.";
+  }
+  btn.disabled = false; btn.textContent = "Share picture";
 };
+$("qClose").onclick = () => $("overlay").hidden = true;
+$("overlay").onclick = e => { if (e.target.id === "overlay") $("overlay").hidden = true; };
 
-function setMode(m) {
-  mode = m;
-  document.getElementById("btnPurchase").classList.toggle("active", m === "purchase");
-  document.getElementById("btnRefi").classList.toggle("active", m === "refi");
-  document.getElementById("btnTarget").classList.toggle("active", m === "target");
-  
-  document.getElementById("purchaseInputs").style.display = m === "purchase" ? "block" : "none";
-  document.getElementById("refiInputs").style.display = m === "refi" ? "block" : "none";
-  document.getElementById("targetInputs").style.display = m === "target" ? "block" : "none";
-}
-
-function switchActiveSlot(slot) {
-  currentScenarioSlot = slot;
-  document.getElementById("scenA").classList.toggle("active", slot === "A");
-  document.getElementById("scenB").classList.toggle("active", slot === "B");
-  
-  const data = scenarios[slot];
-  setMode(data.mode);
-  
-  document.getElementById("price").value = data.price;
-  document.getElementById("downCash").value = data.downCash;
-  document.getElementById("downPct").value = data.downPct;
-  document.getElementById("homeValue").value = data.homeValue;
-  document.getElementById("refiLoanAmt").value = data.refiLoanAmt;
-  document.getElementById("refiLtv").value = data.refiLtv;
-  document.getElementById("rate").value = data.rate;
-  document.getElementById("term").value = data.term;
-  document.getElementById("loanType").value = data.loanType;
-  document.getElementById("creditScore").value = data.creditScore;
-  document.getElementById("vaStatus").value = data.vaStatus;
-  document.getElementById("manualMi").value = data.manualMi;
-  document.getElementById("taxes").value = data.taxes;
-  document.getElementById("ins").value = data.ins;
-  document.getElementById("hoa").value = data.hoa || "0";
-  document.getElementById("targetPiti").value = data.targetPiti;
-  document.getElementById("targetDownCash").value = data.targetDownCash;
-
-  document.getElementById("priceSlider").value = parseNum(data.price);
-  document.getElementById("downPctSlider").value = parseFloat(data.downPct) || 0;
-  document.getElementById("homeValueSlider").value = parseNum(data.homeValue);
-  document.getElementById("refiLoanSlider").value = parseNum(data.refiLoanAmt);
-  document.getElementById("refiLtvSlider").value = parseFloat(data.refiLtv) || 90;
-  document.getElementById("rateSlider").value = parseFloat(data.rate) || 6.5;
-  document.getElementById("taxesSlider").value = parseNum(data.taxes);
-  document.getElementById("insSlider").value = parseNum(data.ins);
-  document.getElementById("hoaSlider").value = parseNum(data.hoa || "0");
-  document.getElementById("targetPitiSlider").value = parseNum(data.targetPiti);
-  document.getElementById("targetDownCashSlider").value = parseNum(data.targetDownCash);
-
-  updateProgramInputs();
-  calc();
-}
-
-function autoSaveCurrentInputs() {
-  scenarios[currentScenarioSlot] = {
-    mode: mode,
-    price: document.getElementById("price").value,
-    downCash: document.getElementById("downCash").value,
-    downPct: document.getElementById("downPct").value,
-    homeValue: document.getElementById("homeValue").value,
-    refiLoanAmt: document.getElementById("refiLoanAmt").value,
-    refiLtv: document.getElementById("refiLtv").value,
-    rate: document.getElementById("rate").value,
-    term: document.getElementById("term").value,
-    loanType: document.getElementById("loanType").value,
-    creditScore: document.getElementById("creditScore").value,
-    vaStatus: document.getElementById("vaStatus").value,
-    manualMi: document.getElementById("manualMi").value,
-    taxes: document.getElementById("taxes").value,
-    ins: document.getElementById("ins").value,
-    hoa: document.getElementById("hoa").value,
-    targetPiti: document.getElementById("targetPiti").value,
-    targetDownCash: document.getElementById("targetDownCash").value
-  };
-}
-
-function syncAndCalc() {
-  autoSaveCurrentInputs();
-  calc();
-}
-
-function toggleComparisonDisplay() {
-  viewingComparison = !viewingComparison;
-  const standardViews = document.getElementById("standardOutputViews");
-  const matrixView = document.getElementById("sideBySideMatrixView");
-  const compBtn = document.getElementById("toggleCompBtn");
-
-  if (viewingComparison) {
-    document.getElementById("cardHeaderTitle").textContent = "Scenario Comparison Matrix";
-    standardViews.style.display = "none";
-    matrixView.style.display = "block";
-    compBtn.textContent = "Show Standard Card";
-    compBtn.style.background = "#005a9c";
-    compBtn.style.borderColor = "#1a4a73";
-  } else {
-    standardViews.style.display = "block";
-    matrixView.style.display = "none";
-    compBtn.textContent = "Compare Side-by-Side";
-    compBtn.style.background = "#5c3b00";
-    compBtn.style.borderColor = "#8f5d00";
-    calc(); 
-  }
-}
-
-function updateProgramInputs() {
-  const type = document.getElementById("loanType").value;
-  document.getElementById("vaStatusBlock").style.display = (type === "VA") ? "block" : "none";
-  document.getElementById("manualMiBlock").style.display = (type === "Conventional") ? "block" : "none";
-}
-
-function onPriceTextChange() {
-  const priceInput = document.getElementById("price");
-  formatNumber(priceInput);
-  const price = parseNum(priceInput.value);
-  document.getElementById("priceSlider").value = price;
-  updateDownCashFromPct();
-}
-function onPriceSliderChange() {
-  const price = parseFloat(document.getElementById("priceSlider").value);
-  const priceInput = document.getElementById("price");
-  priceInput.value = price;
-  formatNumber(priceInput);
-  updateDownCashFromPct();
-}
-function onDownPctTextChange() {
-  let pctVal = parseFloat(document.getElementById("downPct").value) || 0;
-  if (pctVal > 50) pctVal = 50;
-  document.getElementById("downPctSlider").value = pctVal;
-  updateDownCashFromPct();
-}
-function onDownPctSliderChange() {
-  const pctVal = parseFloat(document.getElementById("downPctSlider").value);
-  document.getElementById("downPct").value = pctVal;
-  updateDownCashFromPct();
-}
-function onDownCashTextChange() {
-  const cashInput = document.getElementById("downCash");
-  formatNumber(cashInput);
-  const cash = parseNum(cashInput.value);
-  const price = parseNum(document.getElementById("price").value);
-  if (price > 0) {
-    let computedPct = (cash / price) * 100;
-    if (computedPct > 50) computedPct = 50;
-    document.getElementById("downPct").value = computedPct.toFixed(2);
-    document.getElementById("downPctSlider").value = computedPct;
-  }
-}
-function updateDownCashFromPct() {
-  const price = parseNum(document.getElementById("price").value);
-  const pctVal = parseFloat(document.getElementById("downPct").value) || 0;
-  const cashAmount = Math.round(price * (pctVal / 100));
-  const cashInput = document.getElementById("downCash");
-  cashInput.value = cashAmount;
-  formatNumber(cashInput);
-}
-function syncSliderToText(sliderId, textId) {
-  if (isSyncing) return;
-  isSyncing = true;
-  const val = document.getElementById(sliderId).value;
-  const textInput = document.getElementById(textId);
-  textInput.value = val;
-  if (["price","homeValue","refiLoanAmt","taxes","ins","hoa","targetPiti","targetDownCash"].includes(textId)) formatNumber(textInput);
-  isSyncing = false;
-}
-function syncTextToSlider(textId, sliderId) {
-  if (isSyncing) return;
-  isSyncing = true;
-  const textInput = document.getElementById(textId);
-  formatNumber(textInput);
-  const num = parseNum(textInput.value);
-  const slider = document.getElementById(sliderId);
-  if (num >= slider.min && num <= slider.max) slider.value = num;
-  isSyncing = false;
-}
-function formatNumber(input) {
-  const start = input.selectionStart;
-  const oldLength = input.value.length;
-  let raw = input.value.replace(/,/g, "");
-  if (raw === "" || isNaN(raw)) return;
-  const parts = raw.split(".");
-  parts[0] = parseInt(parts[0], 10).toLocaleString("en-US");
-  const formatted = parts.join(".");
-  input.value = formatted;
-  const diff = formatted.length - oldLength;
-  if (start !== null) input.setSelectionRange(start + diff, start + diff);
-}
-function parseNum(str) { return parseFloat(str.replace(/,/g, "")) || 0; }
-
-function onHomeValueChange() {
-  formatNumber(document.getElementById("homeValue"));
-  const hVal = parseNum(document.getElementById("homeValue").value);
-  document.getElementById("homeValueSlider").value = hVal;
-  if (parseFloat(document.getElementById("refiLtv").value) > 0) onRefiLtvChange();
-}
-function onRefiLoanChange() {
-  if (isSyncing) return;
-  isSyncing = true;
-  const loanInput = document.getElementById("refiLoanAmt");
-  formatNumber(loanInput);
-  const baseLoan = parseNum(loanInput.value);
-  document.getElementById("refiLoanSlider").value = baseLoan;
-  const homeValue = parseNum(document.getElementById("homeValue").value);
-  if (homeValue > 0) {
-    const ltvComputed = ((baseLoan / homeValue) * 100).toFixed(2);
-    document.getElementById("refiLtv").value = ltvComputed;
-    document.getElementById("refiLtvSlider").value = ltvComputed;
-  }
-  isSyncing = false;
-}
-function onRefiLtvChange() {
-  if (isSyncing) return;
-  isSyncing = true;
-  const ltvVal = parseFloat(document.getElementById("refiLtv").value) || 0;
-  document.getElementById("refiLtvSlider").value = ltvVal;
-  const homeValue = parseNum(document.getElementById("homeValue").value);
-  if (homeValue > 0 && ltvVal > 0) {
-    const baseLoan = Math.round(homeValue * (ltvVal / 100));
-    document.getElementById("refiLoanAmt").value = baseLoan.toLocaleString("en-US");
-    document.getElementById("refiLoanSlider").value = baseLoan;
-  }
-  isSyncing = false;
-}
-
-function runEngineCoreCalculations(data) {
-  const rateAnnual = (parseFloat(data.rate) || 0) / 100;
-  const termYears = parseInt(data.term, 10) || 30;
-  const taxesYr = parseNum(data.taxes);
-  const insYr = parseNum(data.ins);
-  const hoaMo = parseNum(data.hoa || "0");
-  const loanType = data.loanType;
-  const totalPayments = termYears * 12;
-  const rateMo = rateAnnual / 12;
-
-  let baseLoan = 0, loanAmt = 0, homeValue = 0, upfrontFeeAmt = 0, downPct = 0;
-  let taxMo = taxesYr / 12;
-  let insMo = insYr / 12;
-
-  if (data.mode === "purchase") {
-    const price = parseNum(data.price);
-    downPct = parseFloat(data.downPct) || 0;
-    baseLoan = price - parseNum(data.downCash);
-    homeValue = price;
-  } 
-  else if (data.mode === "refi") {
-    homeValue = parseNum(data.homeValue);
-    baseLoan = parseNum(data.refiLoanAmt);
-    const ltvVal = parseFloat(data.refiLtv) || 0;
-    downPct = 100 - ltvVal;
-  } 
-  else if (data.mode === "target") {
-    // Find the largest loan whose full monthly payment (P&I, MI, taxes and
-    // insurance, including any financed upfront fee) stays within the target.
-    const targetPiti = parseNum(data.targetPiti);
-    const targetDown = parseNum(data.targetDownCash);
-    const asPurchase = loan => {
-      const price = loan + targetDown;
-      return runEngineCoreCalculations({ ...data, mode: "purchase", price: String(price),
-        downCash: String(targetDown), downPct: String(price > 0 ? (targetDown / price) * 100 : 0) });
-    };
-    let lo = 0, hi = 20000000;
-    for (let i = 0; i < 60; i++) {
-      const midLoan = (lo + hi) / 2;
-      if (asPurchase(midLoan).totalPiti <= targetPiti) lo = midLoan; else hi = midLoan;
-    }
-    return { ...asPurchase(Math.floor(lo)), mode: "target", targetPiti: data.targetPiti };
-  }
-
-  let feeFactor = 0;
-  if (loanType === "FHA") feeFactor = 0.0175;
-  if (loanType === "USDA") feeFactor = 0.0100;
-  if (loanType === "VA" && data.vaStatus !== "exempt") {
-    if (data.vaStatus === "first") {
-      feeFactor = downPct >= 10 ? 0.0125 : (downPct >= 5 ? 0.0150 : 0.0215);
-    } else {
-      feeFactor = downPct >= 10 ? 0.0125 : (downPct >= 5 ? 0.0150 : 0.0330);
-    }
-  }
-
-  upfrontFeeAmt = baseLoan * feeFactor;
-  loanAmt = baseLoan + upfrontFeeAmt;
-  let ltvPercent = homeValue > 0 ? (baseLoan / homeValue) * 100 : 0;
-
-  let miFactor = 0, miAutoFactor = 0;
-  if (loanType === "Conventional") {
-    const autoRow = pmiMatrix[data.creditScore] || pmiMatrix["760"];
-    if (ltvPercent > 95) miAutoFactor = autoRow.over95;
-    else if (ltvPercent > 90) miAutoFactor = autoRow.over90;
-    else if (ltvPercent > 85) miAutoFactor = autoRow.over85;
-    else if (ltvPercent > 80) miAutoFactor = autoRow.over80;
-    const manualMiInput = parseFloat(data.manualMi);
-    if (!isNaN(manualMiInput)) {
-      miFactor = manualMiInput / 100;
-    } else {
-      miFactor = miAutoFactor;
-    }
-  } else if (loanType === "FHA") {
-    miFactor = (downPct >= 5) ? 0.0050 : 0.0055;
-  } else if (loanType === "USDA") {
-    miFactor = 0.0035;
-  }
-
-  let pi = 0;
-  if (rateMo > 0) {
-    const pow = Math.pow(1 + rateMo, totalPayments);
-    pi = (loanAmt * rateMo * pow) / (pow - 1);
-  } else {
-    pi = loanAmt / totalPayments;
-  }
-  
-  const miMo = (loanAmt * miFactor) / 12;
-  const totalPiti = pi + miMo + taxMo + insMo + hoaMo;
-
-  return {
-    mode: data.mode,
-    homeValue,
-    loanType,
-    ltvPercent,
-    baseLoan,
-    upfrontFeeAmt,
-    loanAmt,
-    pi,
-    miMo,
-    miFactor,
-    miAutoFactor,
-    taxMo,
-    insMo,
-    hoaMo,
-    totalPiti,
-    rate: data.rate,
-    term: data.term,
-    targetPiti: data.targetPiti,
-    creditScore: data.creditScore
-  };
-}
-
-function calc() {
-  calculatedOutputs.A = runEngineCoreCalculations(scenarios.A);
-  calculatedOutputs.B = runEngineCoreCalculations(scenarios.B);
-
-  const activeCalc = runEngineCoreCalculations(scenarios[currentScenarioSlot]);
-
-  updateMatrixComparisonUI();
-
-  if (viewingComparison) return; 
-
-  if (mode === "purchase") {
-    document.getElementById("cardHeaderTitle").textContent = "Payment Breakdown Estimate";
-    document.getElementById("donutCenterLabel").textContent = "Total PITI";
-    document.getElementById("totalLabelText").textContent = "Total Monthly Payment";
-    document.getElementById("valueLabel").textContent = "Purchase Price";
-    document.getElementById("valueOut").textContent = fmt(activeCalc.homeValue);
-  } else if (mode === "refi") {
-    document.getElementById("cardHeaderTitle").textContent = "Payment Breakdown Estimate";
-    document.getElementById("donutCenterLabel").textContent = "Total PITI";
-    document.getElementById("totalLabelText").textContent = "Total Monthly Payment";
-    document.getElementById("valueLabel").textContent = "Estimated Home Value";
-    document.getElementById("valueOut").textContent = fmt(activeCalc.homeValue);
-  } else if (mode === "target") {
-    document.getElementById("cardHeaderTitle").textContent = "Maximum Target Qualification";
-    document.getElementById("donutCenterLabel").textContent = "Max Price";
-    document.getElementById("totalLabelText").textContent = "Target PITI Limit";
-    document.getElementById("valueLabel").textContent = "Calculated Max Purchase Price";
-    document.getElementById("valueOut").textContent = fmt(activeCalc.homeValue);
-  }
-
-  const scoreLabels = {
-    "760": "760+ (Excellent)",
-    "720": "720 - 759 (Very Good)",
-    "700": "700 - 719 (Good)",
-    "680": "680 - 699 (Good)",
-    "660": "660 - 679 (Fair)",
-    "640": "640 - 659 (Fair)",
-    "620": "620 - 639 (Subprime)"
-  };
-  document.getElementById("creditScoreOut").textContent = scoreLabels[activeCalc.creditScore] || activeCalc.creditScore;
-
-  document.getElementById("loanTypeOut").textContent = activeCalc.loanType;
-  document.getElementById("ltvOut").textContent = activeCalc.ltvPercent.toFixed(2) + "%";
-  document.getElementById("loanBaseOut").textContent = fmt(activeCalc.baseLoan);
-  document.getElementById("ufmipOut").textContent = fmt(activeCalc.upfrontFeeAmt);
-  document.getElementById("loanAmtOut").textContent = fmt(activeCalc.loanAmt);
-  document.getElementById("piOut").textContent = fmt(activeCalc.pi);
-  document.getElementById("miOut").textContent = fmt(activeCalc.miMo);
-  document.getElementById("manualMi").placeholder = activeCalc.ltvPercent > 80
-    ? "Auto: " + (activeCalc.miAutoFactor * 100).toFixed(2) + "%"
-    : "Auto: none needed (LTV 80% or less)";
-  document.getElementById("taxMoOut").textContent = fmt(activeCalc.taxMo);
-  document.getElementById("insMoOut").textContent = fmt(activeCalc.insMo);
-  document.getElementById("hoaMoOut").textContent = fmt(activeCalc.hoaMo);
-  
-  if (mode === "target") {
-    document.getElementById("pitiOut").textContent = fmt(parseNum(scenarios[currentScenarioSlot].targetPiti));
-    document.getElementById("donutTotalText").textContent = fmt(activeCalc.homeValue);
-  } else {
-    document.getElementById("pitiOut").textContent = fmt(activeCalc.totalPiti);
-    document.getElementById("donutTotalText").textContent = fmt(activeCalc.totalPiti);
-  }
-
-  drawDonut([
-    [activeCalc.pi, "#005a9c"],
-    [activeCalc.miMo, "#4ae290"],
-    [activeCalc.taxMo, "#e2be4a"],
-    [activeCalc.insMo, "#e24a4a"],
-    [activeCalc.hoaMo, "#b07ae2"]
-  ]);
-}
-
-// Draws the payment ring: each slice's share of the total, clockwise from the top.
-function drawDonut(parts) {
-  const canvas = document.getElementById("donutCanvas");
-  const ctx = canvas.getContext("2d");
-  const size = canvas.width, mid = size / 2;
-  const outer = size / 2, inner = size * 46 / 140; // matches the 140px ring and 92px center
-  const total = parts.reduce((sum, p) => sum + Math.max(0, p[0]), 0);
-  ctx.clearRect(0, 0, size, size);
-  let start = -Math.PI / 2;
-  (total > 0 ? parts : [[1, "#005a9c"]]).forEach(([value, color]) => {
-    if (value <= 0) return;
-    const end = start + (value / (total || 1)) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.arc(mid, mid, outer, start, end);
-    ctx.arc(mid, mid, inner, end, start, true);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-    start = end;
-  });
-}
-
-
-function updateMatrixComparisonUI() {
-  const a = calculatedOutputs.A;
-  const b = calculatedOutputs.B;
-
-  if (!a || !b) return;
-
-  const modeLabels = { purchase: "Purchase", refi: "Refinance", target: "What Can I Afford?" };
-
-  document.getElementById("tdScoreA").textContent = a.creditScore + "+";
-  document.getElementById("tdScoreB").textContent = b.creditScore + "+";
-
-  document.getElementById("tdModeA").textContent = modeLabels[a.mode] || a.mode;
-  document.getElementById("tdModeB").textContent = modeLabels[b.mode] || b.mode;
-
-  document.getElementById("tdValA").textContent = fmt(a.homeValue);
-  document.getElementById("tdValB").textContent = fmt(b.homeValue);
-
-  document.getElementById("tdProgA").textContent = `${a.loanType} ${a.term}Yr`;
-  document.getElementById("tdProgB").textContent = `${b.loanType} ${b.term}Yr`;
-
-  document.getElementById("tdRateA").textContent = `${a.rate}%`;
-  document.getElementById("tdRateB").textContent = `${b.rate}%`;
-
-  document.getElementById("tdLoanA").textContent = fmt(a.loanAmt);
-  document.getElementById("tdLoanB").textContent = fmt(b.loanAmt);
-
-  document.getElementById("tdPiA").textContent = fmt(a.pi);
-  document.getElementById("tdPiB").textContent = fmt(b.pi);
-
-  document.getElementById("tdMiA").textContent = fmt(a.miMo);
-  document.getElementById("tdMiB").textContent = fmt(b.miMo);
-
-  document.getElementById("tdEscrowA").textContent = fmt(a.taxMo + a.insMo);
-  document.getElementById("tdEscrowB").textContent = fmt(b.taxMo + b.insMo);
-
-  document.getElementById("tdHoaA").textContent = fmt(a.hoaMo);
-  document.getElementById("tdHoaB").textContent = fmt(b.hoaMo);
-
-  document.getElementById("tdPitiA").textContent = a.mode === "target" ? fmt(parseNum(scenarios.A.targetPiti)) : fmt(a.totalPiti);
-  document.getElementById("tdPitiB").textContent = b.mode === "target" ? fmt(parseNum(scenarios.B.targetPiti)) : fmt(b.totalPiti);
-}
-
-function fmt(n) { return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
-function scrollToResults() { document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" }); }
-
-function generateTextSummaryString() {
-  let summaryText = "";
-  if (viewingComparison) {
-    const a = calculatedOutputs.A;
-    const b = calculatedOutputs.B;
-    const pitiA = a.mode === "target" ? fmt(parseNum(scenarios.A.targetPiti)) : fmt(a.totalPiti);
-    const pitiB = b.mode === "target" ? fmt(parseNum(scenarios.B.targetPiti)) : fmt(b.totalPiti);
-    
-    summaryText = 
-`HMS Comparison Summary
-Scenario A:
-• Credit Score: ${a.creditScore}+
-• Program: ${a.loanType} (${a.rate}%)
-• Value/Price: ${fmt(a.homeValue)}
-• Total Monthly PITI: ${pitiA}
-
-Scenario B:
-• Credit Score: ${b.creditScore}+
-• Program: ${b.loanType} (${b.rate}%)
-• Value/Price: ${fmt(b.homeValue)}
-• Total Monthly PITI: ${pitiB}`;
-  } else {
-    const lType = document.getElementById("loanTypeOut").textContent;
-    const rate = document.getElementById("rate").value;
-    const term = document.getElementById("term").value;
-    const score = document.getElementById("creditScoreOut").textContent;
-    let valLabel = document.getElementById("valueLabel").textContent;
-    let valAmt = document.getElementById("valueOut").textContent;
-    let totalLabel = document.getElementById("totalLabelText").textContent;
-    let totalAmt = document.getElementById("pitiOut").textContent;
-
-    summaryText = 
-`HMS Quick Quote Estimate
-• Target Credit Profile: ${score}
-• ${valLabel}: ${valAmt}
-• Loan Program: ${lType} (${term}-Year Fixed)
-• Interest Rate: ${rate}%
-• Base Loan Amount: ${document.getElementById("loanBaseOut").textContent}
-• P&I Payment: ${document.getElementById("piOut").textContent}
-• Monthly MI: ${document.getElementById("miOut").textContent}
-• Monthly Taxes: ${document.getElementById("taxMoOut").textContent}
-• Monthly Insurance: ${document.getElementById("insMoOut").textContent}
-• Monthly HOA: ${document.getElementById("hoaMoOut").textContent}
-• ${totalLabel}: ${totalAmt}`;
-  }
-  return summaryText;
-}
-
-function copyTextSummary() {
-  const summaryText = generateTextSummaryString() + "\n---------------------------------\nHome Mortgage Solutions, LLC";
-  navigator.clipboard.writeText(summaryText).then(() => {
-    alert("Copied to clipboard!");
-  }).catch(err => {
-    alert("Unable to auto-copy.");
-  });
-}
-
-function openContactModal(officerName, officerPhone) {
-  activeTargetOfficerName = officerName;
-  activeTargetOfficerPhone = officerPhone;
-  document.getElementById("modalTitle").textContent = "Text " + officerName;
-  document.getElementById("contactModal").style.display = "flex";
-}
-
-function closeContactModal() {
-  document.getElementById("contactModal").style.display = "none";
-}
-
-function executeSmsRedirect() {
-  const name = document.getElementById("clientName").value.trim();
-  const phone = document.getElementById("clientPhone").value.trim();
-  const email = document.getElementById("clientEmail").value.trim();
-
-  if (!name || !phone) {
-    alert("Please fill out at least your Name and Phone Number so the officer knows who is reaching out.");
-    return;
-  }
-
-  const loanDetailsData = generateTextSummaryString();
-
-  const smsBody = 
-`Online mortgage calculator customer is reaching out.
-
-Customer Contact Details:
-• Name: ${name}
-• Phone: ${phone}
-• Email: ${email || "Not Provided"}
-
-${loanDetailsData}
-
-Thank you!`;
-
-  const encodedSmsBody = encodeURIComponent(smsBody);
-  closeContactModal();
-  window.location.href = `sms:${activeTargetOfficerPhone}?body=${encodedSmsBody}`;
-}
-
-async function saveScreenshot() {
-  const original = document.getElementById("results");
-
-  const canvas = await html2canvas(original, { 
-    scale: 2, 
-    backgroundColor: "#00335c",
-    logging: false,
-    onclone: (clonedDoc) => {
-      // Keep the compact card styles in the image
-      const cloneResults = clonedDoc.getElementById("results");
-      if (cloneResults) {
-        cloneResults.style.maxWidth = "320px";
-        cloneResults.style.padding = "10px";
-      }
-    }
-  });
-
-  // Display the preview
-  const overlay = document.getElementById("previewOverlay");
-  const fullImg = document.getElementById("previewImage");
-  fullImg.src = canvas.toDataURL("image/png");
-  overlay.style.display = "flex";
-  
-  overlay.onclick = (e) => { 
-    if (e.target === overlay) {
-      overlay.style.display = "none"; 
-    }
-  };
-}
-
-// Starting rate: the latest Freddie Mac weekly national average 30-year fixed
-// rate, rounded down to the eighth, from the data file the market dashboard
-// refreshes several times a day. FHA, VA and USDA start 0.25% lower.
-// If the file can't be loaded, the calculator starts from 6.5%.
-let baseRate = 6.5;
-function programRate(loanType, base) { return loanType === "Conventional" ? base : base - 0.25; }
-// True while a rate is still one the calculator filled in, not one the user typed.
-function isAutoRate(rateText, base) {
-  const v = parseFloat(rateText);
-  return v === base || v === base - 0.25;
-}
-function setRateInput(value) {
-  document.getElementById("rate").value = String(value);
-  document.getElementById("rateSlider").value = value;
-}
-function onLoanTypeChange() {
-  const type = document.getElementById("loanType").value;
-  if (isAutoRate(document.getElementById("rate").value, baseRate)) setRateInput(programRate(type, baseRate));
-  updateProgramInputs();
-  syncAndCalc();
-}
+// Starting rate: the latest Freddie Mac weekly national average 30-year fixed rate,
+// rounded down to the eighth, from the file the market dashboard refreshes several
+// times a day. FHA, VA and USDA start 0.25% lower. Rates someone typed are left alone.
 async function loadNationalAverageRate() {
   try {
     const res = await fetch("https://jfb315-dotcom.github.io/data/market.json", { cache: "no-store" });
     const series = (await res.json()).series.MORTGAGE30US;
-    const avg = series.v[series.v.length - 1];
-    const date = series.d[series.d.length - 1];
+    const avg = series.v[series.v.length - 1], date = series.d[series.d.length - 1];
     if (!(avg >= 2 && avg <= 12)) return;
     const newBase = Math.floor(avg * 8 + 1e-9) / 8;
-    // Move only rates the calculator filled in, never one the user changed.
-    const other = currentScenarioSlot === "A" ? "B" : "A";
-    if (isAutoRate(scenarios[other].rate, baseRate)) scenarios[other].rate = String(programRate(scenarios[other].loanType, newBase));
-    if (isAutoRate(document.getElementById("rate").value, baseRate)) setRateInput(programRate(document.getElementById("loanType").value, newBase));
-    baseRate = newBase;
-    const weekOf = new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    document.getElementById("rateSource").textContent =
-      "National average 30-yr fixed: " + avg.toFixed(2) + "% (Freddie Mac, " + weekOf + "). Starts at " +
-      newBase + "% rounded down; FHA, VA and USDA start 0.25% lower.";
-    syncAndCalc();
+    for (const k of ["A", "B"]) {
+      const sc = S[k];
+      if (sc.rate === BASE_RATE || sc.rate === BASE_RATE - .25) sc.rate = sc.type === "Conventional" ? newBase : newBase - .25;
+    }
+    BASE_RATE = newBase;
+    AVG = { rate: avg, date: new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) };
+    sync();
   } catch (e) { /* keep the built-in rate */ }
 }
 
-window.onload = () => { updateProgramInputs(); calc(); loadNationalAverageRate(); };
+sync();
+loadNationalAverageRate();
 </script>
 </body>
 </html>
